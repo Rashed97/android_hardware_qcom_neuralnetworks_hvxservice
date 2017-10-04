@@ -88,6 +88,10 @@ bool average_pool_2d(const std::vector<uint32_t>& ins, const std::vector<uint32_
     return pool(ins, outs, model, OperationType::AVERAGE_POOL_2D);
 }
 
+bool l2_pool_2d(const std::vector<uint32_t>& ins, const std::vector<uint32_t>& outs, HexagonModel* model) {
+    return pool(ins, outs, model, OperationType::L2_POOL_2D);
+}
+
 bool max_pool_2d(const std::vector<uint32_t>& ins, const std::vector<uint32_t>& outs,
                  HexagonModel* model) {
     return pool(ins, outs, model, OperationType::MAX_POOL_2D);
@@ -99,11 +103,13 @@ bool concatenation(const std::vector<uint32_t>& ins, const std::vector<uint32_t>
     HEXAGON_SOFT_ASSERT_LE(3, ins.size(), "Need at least 3 inputs for " << name);
     HEXAGON_SOFT_ASSERT_EQ(1, outs.size(), "Need 1 output for " << name);
 
-    const int32_t axis = model->getScalar<int32_t>(ins[ins.size() - 2]);
+    const size_t numInputTensors = ins.size() - 1;
+
+    const int32_t axis = model->getScalar<int32_t>(ins[numInputTensors]);
 
     // get output size
-    std::vector<Shape> inShapes(ins.size() - 2);
-    for (size_t i = 0; i < ins.size() - 2; ++i) {
+    std::vector<Shape> inShapes(numInputTensors);
+    for (size_t i = 0; i < numInputTensors; ++i) {
         inShapes[i] = model->getShape(ins[i]);
     }
     Shape outShape = model->getShape(outs[0]);
@@ -137,10 +143,9 @@ bool conv_2d(const std::vector<uint32_t>& ins, const std::vector<uint32_t>& outs
                                     stride_height, &outShape), "Error getting shape");
     HEXAGON_SOFT_ASSERT(model->setShape(outs[0], outShape), "Error setting shape");
 
-    // TODO: enable this later when VTS tests pass filter as constant data
     // enforce filter is a constant
-    //HEXAGON_SOFT_ASSERT(model->isConstant(ins[1]),
-    //                    name << "requires filter to be constant data");
+    HEXAGON_SOFT_ASSERT(model->isConstant(ins[1]),
+                        name << "requires filter to be constant data");
 
     return true;
 }
@@ -170,10 +175,9 @@ bool depthwise_conv_2d(const std::vector<uint32_t>& ins, const std::vector<uint3
                         "Error getting shape");
     HEXAGON_SOFT_ASSERT(model->setShape(outs[0], outShape), "Error setting shape");
 
-    // TODO: enable this later when VTS tests pass filter as constant data
     // enforce filter is a constant
-    //HEXAGON_SOFT_ASSERT(model->isConstant(ins[1]),
-    //                    name << " requires filter to be constant data");
+    HEXAGON_SOFT_ASSERT(model->isConstant(ins[1]),
+                        name << " requires filter to be constant data");
 
     return true;
 }
@@ -186,6 +190,8 @@ bool dequantize(const std::vector<uint32_t>& ins, const std::vector<uint32_t>& o
     // get output size
     const Shape inputShape = model->getShape(ins[0]);
     Shape outShape         = model->getShape(outs[0]);
+
+    LOG(INFO) << "Shape in: " << static_cast<uint32_t>(inputShape.type) << ", shape out: " << static_cast<uint32_t>(outShape.type);
 
     HEXAGON_SOFT_ASSERT(dequantizePrepare(inputShape, &outShape), "Error getting shape");
     HEXAGON_SOFT_ASSERT(model->setShape(outs[0], outShape), "Error setting shape");
@@ -208,10 +214,25 @@ bool fully_connected(const std::vector<uint32_t>& ins, const std::vector<uint32_
                         "Error getting shape");
     HEXAGON_SOFT_ASSERT(model->setShape(outs[0], outShape), "Error setting shape");
 
-    // TODO: enable this later when VTS tests pass filter as constant data
     // enforce weight is a constant
-    //HEXAGON_SOFT_ASSERT(model->isConstant(ins[1]),
-    //                    name << "requires weight to be constant data");
+    HEXAGON_SOFT_ASSERT(model->isConstant(ins[1]),
+                        name << "requires weight to be constant data");
+
+    return true;
+}
+
+bool local_response_normalization(const std::vector<uint32_t>& ins,
+                                  const std::vector<uint32_t>& outs,
+                                  HexagonModel* model) {
+    std::string name = toString(OperationType::LOCAL_RESPONSE_NORMALIZATION);
+    HEXAGON_SOFT_ASSERT_EQ(5, ins.size(), "Need 5 inputs for " << name);
+    HEXAGON_SOFT_ASSERT_EQ(1, outs.size(), "Need 1 output for " << name);
+
+    // get output size
+    const Shape inShape = model->getShape(ins[0]);
+    Shape outShape      = model->getShape(outs[0]);
+    HEXAGON_SOFT_ASSERT(genericNormalizationPrepare(inShape, &outShape), "Error getting shape");
+    HEXAGON_SOFT_ASSERT(model->setShape(outs[0], outShape), "Error setting shape");
 
     return true;
 }
@@ -281,6 +302,26 @@ bool reshape(const std::vector<uint32_t>& ins, const std::vector<uint32_t>& outs
     return true;
 }
 
+bool resize_bilinear(const std::vector<uint32_t>& ins, const std::vector<uint32_t>& outs,
+                     HexagonModel* model) {
+    std::string name = toString(OperationType::RESIZE_BILINEAR);
+    HEXAGON_SOFT_ASSERT_EQ(3, ins.size(), "Need 3 inputs for " << name);
+    HEXAGON_SOFT_ASSERT_EQ(1, outs.size(), "Need 1 output for " << name);
+
+    // get parameters
+    const int32_t width  = model->getScalar<int32_t>(ins[1]);
+    const int32_t height = model->getScalar<int32_t>(ins[2]);
+
+    // get output size
+    const Shape inShape  = model->getShape(ins[0]);
+    Shape outShape       = model->getShape(outs[0]);
+    HEXAGON_SOFT_ASSERT(resizeBilinearPrepare(inShape, width, height, &outShape),
+                        "Error getting shape");
+    HEXAGON_SOFT_ASSERT(model->setShape(outs[0], outShape), "Error setting shape");
+
+    return true;
+}
+
 }  // namespace
 
 OperationCheckTable& getOperationCheckTable() {
@@ -297,8 +338,8 @@ OperationCheckTable& getOperationCheckTable() {
         {OperationType::FULLY_CONNECTED,              fully_connected             },
 //      {OperationType::HASHTABLE_LOOKUP,             hashtable_lookup            },
 //      {OperationType::L2_NORMALIZATION,             l2_normalization            },
-//      {OperationType::L2_POOL_2D,                   l2_pool_2d                  },
-//      {OperationType::LOCAL_RESPONSE_NORMALIZATION, local_response_normalization},
+        {OperationType::L2_POOL_2D,                   l2_pool_2d                  },
+        {OperationType::LOCAL_RESPONSE_NORMALIZATION, local_response_normalization},
         {OperationType::LOGISTIC,                     logistic                    },
 //      {OperationType::LSH_PROJECTION,               lsh_projection              },
 //      {OperationType::LSTM,                         lstm                        },
@@ -308,7 +349,7 @@ OperationCheckTable& getOperationCheckTable() {
         {OperationType::RELU1,                        relu1                       },
         {OperationType::RELU6,                        relu6                       },
         {OperationType::RESHAPE,                      reshape                     },
-//      {OperationType::RESIZE_BILINEAR,              resize_bilinear             },
+        {OperationType::RESIZE_BILINEAR,              resize_bilinear             },
 //      {OperationType::RNN,                          rnn                         },
         {OperationType::SOFTMAX,                      softmax                     },
 //      {OperationType::SPACE_TO_DEPTH,               space_to_depth              },

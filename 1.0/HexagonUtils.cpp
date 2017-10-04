@@ -30,6 +30,12 @@ namespace V1_0 {
 namespace implementation {
 namespace hexagon {
 
+bool isHexagonAvailable() {
+    int version = -1;
+    hexagon::Controller::getInstance().version(&version);
+    return version == 92;
+}
+
 hexagon_nn_padding_type getPadding(uint32_t pad) {
     switch (pad) {
         case ::android::nn::kPaddingSame:
@@ -173,25 +179,6 @@ bool operator==(const hexagon_nn_output& lhs, const hexagon_nn_output& rhs) {
 
 bool operator!=(const hexagon_nn_output& lhs, const hexagon_nn_output& rhs) {
     return !(lhs == rhs);
-}
-
-std::vector<uint8_t> convFilterTranspose(const ::android::nn::Shape& shape,
-                                         const uint8_t* buffer, size_t length) {
-    std::vector<uint8_t> output(length);
-    uint32_t dataSize = getSize(shape.type);
-    if (dataSize == 1) {
-        // TODO: actual transpose later
-        for (size_t i = 0; i < output.size(); ++i) {
-            output[i] = buffer[i];
-        }
-    }
-    else { // dataSize == 4
-        // TODO: actual transpose later
-        for (size_t i = 0; i < output.size() / 4; ++i) {
-            reinterpret_cast<int*>(output.data())[i] = reinterpret_cast<const int32_t*>(buffer)[i];
-        }
-    }
-    return output;
 }
 
 hexagon_nn_output make_hexagon_nn_output(const std::vector<uint32_t>& dims, uint32_t size) {
