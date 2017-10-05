@@ -42,6 +42,11 @@
  * This defines common types used.
  */
 
+/**
+ * This file comes from:
+ * https://source.codeaurora.org/quic/hexagon_nn/nnlib/tree/interface/hexagon_nn_ops.h
+ */
+
 #define DEF_OP(NAME,...) OP_##NAME,
 typedef enum op_type_enum {
 #include "ops.def"

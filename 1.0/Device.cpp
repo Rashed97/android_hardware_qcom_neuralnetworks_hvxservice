@@ -21,6 +21,8 @@
 #include "HexagonUtils.h"
 #include "PreparedModel.h"
 #include <android-base/logging.h>
+#include <mutex>
+#include <thread>
 
 namespace android {
 namespace hardware {
@@ -32,10 +34,14 @@ Device::Device() : mCurrentStatus(DeviceStatus::AVAILABLE) {}
 
 Device::~Device() {}
 
-// Methods from IDevice follow.
+static std::once_flag configure_nnlib;
+static void configureHexagon() {
+    std::call_once(configure_nnlib, [](){ hexagon::Controller::getInstance().config(); });
+}
 
 Return<void> Device::getCapabilities(getCapabilities_cb _hidl_cb) {
     LOG(INFO) << "Device::getCapabilities";
+    configureHexagon();
 
     PerformanceInfo float32Performance = {
         .execTime   = 100.0f, // nanoseconds?
@@ -52,17 +58,24 @@ Return<void> Device::getCapabilities(getCapabilities_cb _hidl_cb) {
         .quantized8Performance = quantized8Performance,
     };
 
-    _hidl_cb(ErrorStatus::NONE, capabilities);
+    ErrorStatus status =
+            hexagon::isHexagonAvailable() ? ErrorStatus::NONE : ErrorStatus::DEVICE_UNAVAILABLE;
+
+    _hidl_cb(status, capabilities);
     return Void();
 }
 
 Return<void> Device::getSupportedOperations(const Model& model,
                                             getSupportedOperations_cb _hidl_cb) {
     LOG(INFO) << "Device::getSupportedOperations";
+    configureHexagon();
 
     if (!nn::validateModel(model)) {
-        std::vector<bool> supported;
-        _hidl_cb(ErrorStatus::INVALID_ARGUMENT, supported);
+        _hidl_cb(ErrorStatus::INVALID_ARGUMENT, std::vector<bool>{});
+        return Void();
+    }
+    if (!hexagon::isHexagonAvailable()) {
+        _hidl_cb(ErrorStatus::DEVICE_UNAVAILABLE, std::vector<bool>{});
         return Void();
     }
 
@@ -73,9 +86,22 @@ Return<void> Device::getSupportedOperations(const Model& model,
     return Void();
 }
 
+void Device::asyncPrepare(const Model& model, const sp<IPreparedModelCallback>& callback) {
+    hexagon::Model hexagonModel(model);
+
+    if (hexagonModel.compile()) {
+        callback->notify(ErrorStatus::NONE, new PreparedModel(model, std::move(hexagonModel)));
+    }
+    else {
+        callback->notify(ErrorStatus::GENERAL_FAILURE, nullptr);
+    }
+}
+
 Return<ErrorStatus> Device::prepareModel(const Model& model,
                                          const sp<IPreparedModelCallback>& callback) {
     LOG(INFO) << "Device::prepareModel";
+    configureHexagon();
+
     if (callback.get() == nullptr) {
         LOG(ERROR) << "invalid callback passed to prepareModel";
         return ErrorStatus::INVALID_ARGUMENT;
@@ -84,27 +110,23 @@ Return<ErrorStatus> Device::prepareModel(const Model& model,
         callback->notify(ErrorStatus::INVALID_ARGUMENT, nullptr);
         return ErrorStatus::INVALID_ARGUMENT;
     }
+    if (!hexagon::isHexagonAvailable()) {
+        callback->notify(ErrorStatus::DEVICE_UNAVAILABLE, nullptr);
+        return ErrorStatus::DEVICE_UNAVAILABLE;
+    }
 
-    hexagon::Model hexagonModel(model);
-
-    // attempt to compile model; if this fails, it will be fully compiled later
-    hexagonModel.compile();
-    callback->notify(ErrorStatus::NONE, new PreparedModel(model, std::move(hexagonModel)));
+    // This thread is intentionally detached because the sample driver service
+    // is expected to live forever.
+    std::thread([this, model, callback]{ return asyncPrepare(model, callback); }).detach();
 
     return ErrorStatus::NONE;
 }
 
 Return<DeviceStatus> Device::getStatus() {
     LOG(INFO) << "Device::getStatus";
-
-    // TODO: remove dummy function
-    // this is simply here to test connection to Hexagon
-    int version = -1;
-    hexagon::Controller::getInstance().version(&version);
-    mCurrentStatus = version == 92 ? DeviceStatus::AVAILABLE : DeviceStatus::BUSY;
-
-    LOG(INFO) << "current status: " << version << ", " << toString(mCurrentStatus);
-
+    configureHexagon();
+    mCurrentStatus =
+            hexagon::isHexagonAvailable() ? DeviceStatus::AVAILABLE : DeviceStatus::OFFLINE;
     return mCurrentStatus;
 }
 

@@ -16,6 +16,7 @@
 
 #define LOG_TAG "android.hardware.neuralnetworks@1.0-impl-hvx"
 
+#include "HexagonUtils.h"
 #include "PreparedModel.h"
 #include <android-base/logging.h>
 #include <thread>
@@ -32,15 +33,17 @@ PreparedModel::PreparedModel(const Model& neuralNetworksModel, hexagon::Model&& 
 PreparedModel::~PreparedModel() {}
 
 void PreparedModel::asyncExecute(const Request& request, const sp<IExecutionCallback>& callback) {
+    // For now, only one thread can execute on HVX for a given model at one time
+    std::lock_guard<std::mutex> guard(mMutex);
     ErrorStatus status = mHexagonModel.execute(request) == true ?
             ErrorStatus::NONE : ErrorStatus::GENERAL_FAILURE;
     callback->notify(status);
 }
 
-// Methods from IPreparedModel follow.
 Return<ErrorStatus> PreparedModel::execute(const Request& request,
                                            const sp<IExecutionCallback>& callback) {
     LOG(INFO) << "PreparedModel::execute";
+
     if (callback.get() == nullptr) {
         LOG(ERROR) << "invalid callback passed to execute";
         return ErrorStatus::INVALID_ARGUMENT;
@@ -49,10 +52,15 @@ Return<ErrorStatus> PreparedModel::execute(const Request& request,
         callback->notify(ErrorStatus::INVALID_ARGUMENT);
         return ErrorStatus::INVALID_ARGUMENT;
     }
+    if (!hexagon::isHexagonAvailable()) {
+        callback->notify(ErrorStatus::DEVICE_UNAVAILABLE);
+        return ErrorStatus::DEVICE_UNAVAILABLE;
+    }
 
     // This thread is intentionally detached because the sample driver service
     // is expected to live forever.
     std::thread([this, request, callback]{ return asyncExecute(request, callback); }).detach();
+
     return ErrorStatus::NONE;
 }
 

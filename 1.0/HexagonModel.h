@@ -100,8 +100,11 @@ public:
     op_type getFloatActivation(uint32_t operand);
     op_type getQuantizedActivation(uint32_t operand);
 
+    template<typename Type> hexagon_nn_input createTensor(
+            uint32_t B, uint32_t H, uint32_t W, uint32_t D, const std::vector<Type>& values);
     hexagon_nn_input createShape(uint32_t B, uint32_t H, uint32_t W, uint32_t D);
     template<typename Type> hexagon_nn_input createValues(const std::vector<Type>& values);
+    template<typename Type> hexagon_nn_input createScalar(Type value);
 
     // model prepare operations
     bool addBasicOperation(op_type op, hexagon_nn_padding_type pad,
@@ -136,6 +139,8 @@ private:
     uint32_t addOperationInternal(op_type op, hexagon_nn_padding_type pad,
                                   const std::vector<hexagon_nn_input>& inputs,
                                   const std::vector<hexagon_nn_output>& outputs);
+    hexagon_nn_input createTensorInternal(uint32_t B, uint32_t H, uint32_t W, uint32_t D,
+                                          const uint8_t* ptr, size_t size);
     std::vector<hexagon_nn_input> setupActivationArgs(op_type op);
     hexagon_nn_input addOperand(uint32_t operand);
     std::vector<hexagon_nn_output> getHexagonOutputs(const std::vector<uint32_t>& operands);
@@ -165,17 +170,24 @@ private:
 
 template<typename Type>
 Type Model::getScalar(uint32_t operand) {
-    return *reinterpret_cast<Type*>(mOperands[operand].buffer);
+    return *reinterpret_cast<const Type*>(mOperands[operand].buffer);
+}
+
+template<typename Type>
+hexagon_nn_input Model::createTensor(uint32_t B, uint32_t H, uint32_t W, uint32_t D,
+                                     const std::vector<Type>& values) {
+    return createTensorInternal(B, H, W, D, reinterpret_cast<const uint8_t*>(values.data()),
+                                values.size() * sizeof(Type));
 }
 
 template<typename Type>
 hexagon_nn_input Model::createValues(const std::vector<Type>& values) {
-    const uint8_t* ptr = reinterpret_cast<const uint8_t*>(values.data());
-    uint32_t node = getNextNode();
-    bool success = hexagon::Controller::getInstance().append_const_node(
-            mGraphId, node, 1, 1, 1, values.size(), ptr, values.size() * sizeof(Type)) == 0;
-    HEXAGON_SOFT_ASSERT(success, "Failed to create value");
-    return {.src_id = node, .output_idx = 0};
+    return createTensor(1, 1, 1, values.size(), values);
+}
+
+template<typename Type>
+hexagon_nn_input Model::createScalar(Type value) {
+    return createTensorInternal(1, 1, 1, 1, reinterpret_cast<uint8_t*>(&value), sizeof(Type));
 }
 
 } // namespace hexagon

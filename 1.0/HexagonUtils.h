@@ -18,6 +18,7 @@
 #define ANDROID_HARDWARE_V1_0_UTILS_H
 
 #include "CpuExecutor.h"
+#include "HexagonController.h"
 #include "OperationsUtils.h"
 #include "hexagon_nn_controller/hexagon_nn_controller.h"
 #include <android/hardware/neuralnetworks/1.0/types.h>
@@ -57,6 +58,8 @@ using ::android::hardware::neuralnetworks::V1_0::Operand;
 using ::android::sp;
 using ::android::nn::RunTimePoolInfo;
 
+bool isHexagonAvailable();
+
 hexagon_nn_padding_type getPadding(uint32_t pad);
 hexagon_nn_padding_type getPadding(uint32_t filterWidth, uint32_t filterHeight,
                                    uint32_t paddingLeft, uint32_t paddingRight,
@@ -74,8 +77,16 @@ std::unordered_set<uint32_t> getPoolIndexes(const std::vector<RequestArgument>& 
 const uint8_t* getData(const Operand& operand, const hidl_vec<uint8_t>& block,
                        const std::vector<RunTimePoolInfo>& pools);
 
-std::vector<uint8_t> convFilterTranspose(const ::android::nn::Shape& shape,
-                                         const uint8_t* buffer, size_t length);
+template<typename Type>
+std::vector<Type> transpose(uint32_t height, uint32_t width, const Type* input) {
+    std::vector<Type> output(height * width);
+    for (uint32_t i = 0; i < height; ++i) {
+        for (uint32_t j = 0; j < width; ++j) {
+            output[i*width + j] = input[j*height + i];
+        }
+    }
+    return output;
+}
 
 hexagon_nn_output make_hexagon_nn_output(const std::vector<uint32_t>& dims, uint32_t size);
 
