@@ -88,7 +88,8 @@ bool average_pool_2d(const std::vector<uint32_t>& ins, const std::vector<uint32_
     return pool(ins, outs, model, OperationType::AVERAGE_POOL_2D);
 }
 
-bool l2_pool_2d(const std::vector<uint32_t>& ins, const std::vector<uint32_t>& outs, HexagonModel* model) {
+bool l2_pool_2d(const std::vector<uint32_t>& ins, const std::vector<uint32_t>& outs,
+                HexagonModel* model) {
     return pool(ins, outs, model, OperationType::L2_POOL_2D);
 }
 
@@ -182,7 +183,8 @@ bool depthwise_conv_2d(const std::vector<uint32_t>& ins, const std::vector<uint3
     return true;
 }
 
-bool dequantize(const std::vector<uint32_t>& ins, const std::vector<uint32_t>& outs, HexagonModel* model) {
+bool dequantize(const std::vector<uint32_t>& ins, const std::vector<uint32_t>& outs,
+                HexagonModel* model) {
     std::string name = toString(OperationType::DEQUANTIZE);
     HEXAGON_SOFT_ASSERT_EQ(1, ins.size(), "Need 1 input for " << name);
     HEXAGON_SOFT_ASSERT_EQ(1, outs.size(), "Need 1 output for " << name);
@@ -190,8 +192,6 @@ bool dequantize(const std::vector<uint32_t>& ins, const std::vector<uint32_t>& o
     // get output size
     const Shape inputShape = model->getShape(ins[0]);
     Shape outShape         = model->getShape(outs[0]);
-
-    LOG(INFO) << "Shape in: " << static_cast<uint32_t>(inputShape.type) << ", shape out: " << static_cast<uint32_t>(outShape.type);
 
     HEXAGON_SOFT_ASSERT(dequantizePrepare(inputShape, &outShape), "Error getting shape");
     HEXAGON_SOFT_ASSERT(model->setShape(outs[0], outShape), "Error setting shape");
@@ -239,7 +239,8 @@ bool local_response_normalization(const std::vector<uint32_t>& ins,
 
 bool activation(const std::vector<uint32_t>& ins, const std::vector<uint32_t>& outs,
                 HexagonModel* model, uint32_t numInputs, OperationType op) {
-    HEXAGON_SOFT_ASSERT_EQ(numInputs, ins.size(), "Need " << numInputs << " input for " << toString(op));
+    HEXAGON_SOFT_ASSERT_EQ(numInputs, ins.size(), "Need " << numInputs << " input for "
+                                                          << toString(op));
     HEXAGON_SOFT_ASSERT_EQ(1, outs.size(), "Need 1 output for " << toString(op));
 
     // get output size

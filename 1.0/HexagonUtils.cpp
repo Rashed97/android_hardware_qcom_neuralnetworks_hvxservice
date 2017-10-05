@@ -94,10 +94,8 @@ uint32_t getSize(OperandType type) {
         4, // TENSOR_INT32
         1, // TENSOR_SYMMETRICAL_QUANT8
     };
-    if (static_cast<uint32_t>(type) >= sizeof(sizes) / sizeof(*sizes)) {
-        LOG(ERROR) << "Error: type exceeds max enum value";
-        return 0;
-    }
+    HEXAGON_SOFT_ASSERT(static_cast<uint32_t>(type) < sizeof(sizes) / sizeof(*sizes),
+                        "Error: type exceeds max enum value");
     return sizes[static_cast<uint32_t>(type)];
 }
 
@@ -134,7 +132,8 @@ const uint8_t* getDataFromBlock(const hidl_vec<uint8_t>& block, uint32_t offset,
     return block.data() + offset;
 }
 
-const uint8_t* getDataFromPool(const RunTimePoolInfo& pool, uint32_t offset, [[maybe_unused]] uint32_t length) {
+const uint8_t* getDataFromPool(const RunTimePoolInfo& pool, uint32_t offset,
+                               [[maybe_unused]] uint32_t length) {
     //HEXAGON_SOFT_ASSERT_LE(offset + length, pool->getSize(),
     //                       "Error: trying to copy data from outside of pool bounds");
     return pool.buffer + offset;
@@ -228,6 +227,8 @@ const char* kOps[] = {
     "OP_QuantizedMaxPool_8_ref",
     "OP_QuantizedAvgPool_8",
     "OP_QuantizedAvgPool_8_ref",
+    "OP_QuantizedL2Pool_8",
+    "OP_QuantizedL2Pool_8_ref",
     "OP_QuantizedConcat_8",
     "OP_QuantizedConcat_8_ref",
     "OP_QuantizedBiasAdd_8p8to32",
@@ -249,6 +250,7 @@ const char* kOps[] = {
     "OP_Relu_f",
     "OP_ReluX_f",
     "OP_AvgPool_f",
+    "OP_L2Pool_f",
     "OP_MaxPool_f",
     "OP_Concat_f",
     "OP_BiasAdd_f",
@@ -366,6 +368,20 @@ const char* kOps[] = {
     "OP_QuantizedClamp_8_ref",
     "OP_Clamp_f",
     "OP_QuantizeForTest_d32",
+    "OP_Close_d32",
+    "OP_QuantizedSub_8x8to8_d32",
+    "OP_QuantizedSub_8x8to8_d32_ref",
+    "OP_InputSupernode_8x8p8to8_outd32",
+    "OP_QuantizedLRN_8_d32",
+    "OP_QuantizedBiasAdd_32p32to32",
+    "OP_QuantizedBiasAdd_32p32to32_ref",
+    "OP_Quantize_int32",
+    "OP_Quantize_int32_ref",
+    "OP_Supernode_8x8p32to8",
+    "OP_DepthwiseSupernode_8x8p32to8",
+    "OP_Supernode_8x8p32to8_d32",
+    "OP_DepthwiseSupernode_8x8p32to8_d32",
+    "OP_InputSupernode_8x8p32to8_outd32",
 };
 
 const char* kPadding[] = {
