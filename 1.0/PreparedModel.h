@@ -14,15 +14,15 @@
  * limitations under the License.
  */
 
-#ifndef ANDROID_HARDWARE_NEURALNETWORKS_V1_0_DEVICE_H
-#define ANDROID_HARDWARE_NEURALNETWORKS_V1_0_DEVICE_H
+#ifndef ANDROID_HARDWARE_NEURALNETWORKS_V1_0_PREPAREDMODEL_H
+#define ANDROID_HARDWARE_NEURALNETWORKS_V1_0_PREPAREDMODEL_H
 
-#include <android/hardware/neuralnetworks/1.0/IDevice.h>
+#include "HexagonModel.h"
+#include "hexagon_nn_controller/hexagon_nn_controller.h"
 #include <android/hardware/neuralnetworks/1.0/IPreparedModel.h>
-#include <android/hardware/neuralnetworks/1.0/types.h>
 #include <hidl/MQDescriptor.h>
 #include <hidl/Status.h>
-#include <string>
+#include <mutex>
 
 namespace android {
 namespace hardware {
@@ -38,20 +38,28 @@ using ::android::hardware::Return;
 using ::android::hardware::Void;
 using ::android::sp;
 
-struct Device : public IDevice {
-    Device();
-    ~Device() override;
+struct PreparedModel : public IPreparedModel {
+private:
+    PreparedModel()                                = delete;
+    PreparedModel(const PreparedModel&)            = delete;
+    PreparedModel(PreparedModel&&)                 = delete;
+    PreparedModel& operator=(const PreparedModel&) = delete;
+    PreparedModel& operator=(PreparedModel&&)      = delete;
 
-    // Methods from IDevice follow.
-    Return<void> getCapabilities(getCapabilities_cb _hidl_cb) override;
-    Return<void> getSupportedOperations(const Model& model,
-                                        getSupportedOperations_cb _hidl_cb) override;
-    Return<ErrorStatus> prepareModel(const Model& model,
-                                     const sp<IPreparedModelCallback>& callback) override;
-    Return<DeviceStatus> getStatus() override;
+public:
+    PreparedModel(const Model& oldModel, hexagon::Model&& model);
+    ~PreparedModel() override;
+
+    // Methods from IPreparedModel follow.
+    Return<ErrorStatus> execute(const Request& request,
+                                const sp<IExecutionCallback>& callback) override;
 
 private:
-    DeviceStatus mCurrentStatus;
+    void asyncExecute(const Request& request, const sp<IExecutionCallback>& callback);
+
+    Model          mNeuralNetworksModel;
+    hexagon::Model mHexagonModel;
+    std::mutex     mMutex;
 };
 
 }  // namespace implementation
@@ -60,4 +68,4 @@ private:
 }  // namespace hardware
 }  // namespace android
 
-#endif  // ANDROID_HARDWARE_NEURALNETWORKS_V1_0_DEVICE_H
+#endif  // ANDROID_HARDWARE_NEURALNETWORKS_V1_0_PREPAREDMODEL_H
