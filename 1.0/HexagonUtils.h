@@ -29,7 +29,7 @@
 
 #define HEXAGON_SOFT_ASSERT(condition, message)                                                  \
     if (!(condition)) {                                                                          \
-        LOG(ERROR) << __FILE__ << "::" << __LINE__ << " -- " << message;                         \
+        LOG(DEBUG) << __FILE__ << "::" << __LINE__ << " -- " << message;                         \
         return {};                                                                               \
     }
 

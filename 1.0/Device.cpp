@@ -23,6 +23,7 @@
 #include <android-base/logging.h>
 #include <mutex>
 #include <thread>
+#include <memory>
 
 namespace android {
 namespace hardware {
@@ -40,7 +41,6 @@ static void configureHexagon() {
 }
 
 Return<void> Device::getCapabilities(getCapabilities_cb _hidl_cb) {
-    LOG(INFO) << "Device::getCapabilities";
     configureHexagon();
 
     PerformanceInfo float32Performance = {
@@ -67,7 +67,6 @@ Return<void> Device::getCapabilities(getCapabilities_cb _hidl_cb) {
 
 Return<void> Device::getSupportedOperations(const Model& model,
                                             getSupportedOperations_cb _hidl_cb) {
-    LOG(INFO) << "Device::getSupportedOperations";
     configureHexagon();
 
     if (!nn::validateModel(model)) {
@@ -87,10 +86,10 @@ Return<void> Device::getSupportedOperations(const Model& model,
 }
 
 void Device::asyncPrepare(const Model& model, const sp<IPreparedModelCallback>& callback) {
-    hexagon::Model hexagonModel(model);
+    std::shared_ptr<hexagon::Model> hexagonModel = std::make_shared<hexagon::Model>(model);
 
-    if (hexagonModel.compile()) {
-        callback->notify(ErrorStatus::NONE, new PreparedModel(model, std::move(hexagonModel)));
+    if (hexagonModel->compile()) {
+        callback->notify(ErrorStatus::NONE, new PreparedModel(model, hexagonModel));
     }
     else {
         callback->notify(ErrorStatus::GENERAL_FAILURE, nullptr);
@@ -99,7 +98,6 @@ void Device::asyncPrepare(const Model& model, const sp<IPreparedModelCallback>& 
 
 Return<ErrorStatus> Device::prepareModel(const Model& model,
                                          const sp<IPreparedModelCallback>& callback) {
-    LOG(INFO) << "Device::prepareModel";
     configureHexagon();
 
     if (callback.get() == nullptr) {
@@ -117,13 +115,12 @@ Return<ErrorStatus> Device::prepareModel(const Model& model,
 
     // This thread is intentionally detached because the sample driver service
     // is expected to live forever.
-    std::thread([this, model, callback]{ return asyncPrepare(model, callback); }).detach();
+    std::thread([this, model, callback]{ asyncPrepare(model, callback); }).detach();
 
     return ErrorStatus::NONE;
 }
 
 Return<DeviceStatus> Device::getStatus() {
-    LOG(INFO) << "Device::getStatus";
     configureHexagon();
     mCurrentStatus =
             hexagon::isHexagonAvailable() ? DeviceStatus::AVAILABLE : DeviceStatus::OFFLINE;
