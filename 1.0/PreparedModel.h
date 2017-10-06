@@ -22,7 +22,7 @@
 #include <android/hardware/neuralnetworks/1.0/IPreparedModel.h>
 #include <hidl/MQDescriptor.h>
 #include <hidl/Status.h>
-#include <mutex>
+#include <memory>
 
 namespace android {
 namespace hardware {
@@ -47,7 +47,8 @@ private:
     PreparedModel& operator=(PreparedModel&&)      = delete;
 
 public:
-    PreparedModel(const Model& oldModel, hexagon::Model&& model);
+    PreparedModel(const Model& neuralNetworksModel,
+                  const std::shared_ptr<hexagon::Model>& hexagonModel);
     ~PreparedModel() override;
 
     // Methods from IPreparedModel follow.
@@ -55,11 +56,8 @@ public:
                                 const sp<IExecutionCallback>& callback) override;
 
 private:
-    void asyncExecute(const Request& request, const sp<IExecutionCallback>& callback);
-
-    Model          mNeuralNetworksModel;
-    hexagon::Model mHexagonModel;
-    std::mutex     mMutex;
+    Model mNeuralNetworksModel;
+    std::shared_ptr<hexagon::Model> mHexagonModel;
 };
 
 }  // namespace implementation

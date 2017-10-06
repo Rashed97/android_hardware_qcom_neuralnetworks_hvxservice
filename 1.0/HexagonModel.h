@@ -110,10 +110,12 @@ public:
     bool addBasicOperation(op_type op, hexagon_nn_padding_type pad,
                            const std::vector<hexagon_nn_input>& inputs,
                            const std::vector<uint32_t>& outputs);
-    bool addFloatOperationWithActivation(op_type op, hexagon_nn_padding_type pad, op_type activation,
+    bool addFloatOperationWithActivation(op_type op, hexagon_nn_padding_type pad,
+                                         op_type activation,
                                          const std::vector<hexagon_nn_input>& inputs,
                                          const std::vector<uint32_t>& outputs);
-    bool addQuant8OperationWithActivation(op_type op, hexagon_nn_padding_type pad, op_type activation,
+    bool addQuant8OperationWithActivation(op_type op, hexagon_nn_padding_type pad,
+                                          op_type activation,
                                           const std::vector<hexagon_nn_input>& inputs,
                                           const std::vector<uint32_t>& outputs);
     bool addFusedFloatOperation(op_type op,

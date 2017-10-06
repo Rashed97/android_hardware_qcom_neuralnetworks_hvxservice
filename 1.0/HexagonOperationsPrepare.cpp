@@ -71,7 +71,8 @@ bool average_pool_2d(const std::vector<uint32_t>& ins, const std::vector<uint32_
                                                    padding_right, padding_top, padding_bottom);
 
     // add node to graph
-    return model->addFloatOperationWithActivation(OP_AvgPool_f, pad, act, {input, window, stride}, outs);
+    return model->addFloatOperationWithActivation(OP_AvgPool_f, pad, act,
+                                                  {input, window, stride}, outs);
 }
 
 bool concatenation(const std::vector<uint32_t>& ins, const std::vector<uint32_t>& outs,
@@ -175,7 +176,8 @@ bool fully_connected(const std::vector<uint32_t>& ins, const std::vector<uint32_
                                          {input, weights}, outs);
 }
 
-bool l2_pool_2d(const std::vector<uint32_t>& ins, const std::vector<uint32_t>& outs, HexagonModel* model) {
+bool l2_pool_2d(const std::vector<uint32_t>& ins, const std::vector<uint32_t>& outs,
+                HexagonModel* model) {
     HEXAGON_SOFT_ASSERT_EQ(10, ins.size(), "Need 10 inputs for float32::l2_pool_2d");
     HEXAGON_SOFT_ASSERT_EQ(1, outs.size(), "Need 1 output for float32::l2_pool_2d");
 
@@ -197,14 +199,17 @@ bool l2_pool_2d(const std::vector<uint32_t>& ins, const std::vector<uint32_t>& o
     const hexagon_nn_padding_type pad = getPadding(filter_width, filter_height, padding_left,
                                                    padding_right, padding_top, padding_bottom);
     // add node to graph
-    return model->addFloatOperationWithActivation(OP_L2Pool_f, pad, act, {input, window, stride}, outs);
+    return model->addFloatOperationWithActivation(OP_L2Pool_f, pad, act,
+                                                  {input, window, stride}, outs);
 }
 
 bool local_response_normalization(const std::vector<uint32_t>& ins,
                                   const std::vector<uint32_t>& outs,
                                   HexagonModel* model) {
-    HEXAGON_SOFT_ASSERT_EQ(5, ins.size(), "Need 5 inputs for float32::local_response_normalization");
-    HEXAGON_SOFT_ASSERT_EQ(1, outs.size(), "Need 1 output for float32::local_response_normalization");
+    HEXAGON_SOFT_ASSERT_EQ(5, ins.size(),
+                           "Need 5 inputs for float32::local_response_normalization");
+    HEXAGON_SOFT_ASSERT_EQ(1, outs.size(),
+                           "Need 1 output for float32::local_response_normalization");
 
     // get parameters
     const hexagon_nn_input& input = model->getTensor(ins[0]);
@@ -214,7 +219,6 @@ bool local_response_normalization(const std::vector<uint32_t>& ins,
 
     // create value that's [1, 1, 1, radius] with value of 1.0f
     const int32_t radius          = model->getScalar<int32_t>(ins[1]);
-    //const hexagon_nn_input window = model->createValues(std::vector<float>(radius * 2 + 1, 1.0f));
     const hexagon_nn_input window = model->createTensor<float>(1, 1, 1, radius * 2 + 1, {1.0f});
 
     // add node to graph
@@ -256,7 +260,8 @@ bool max_pool_2d(const std::vector<uint32_t>& ins, const std::vector<uint32_t>& 
     const hexagon_nn_padding_type pad = getPadding(filter_width, filter_height, padding_left,
                                                    padding_right, padding_top, padding_bottom);
     // add node to graph
-    return model->addFloatOperationWithActivation(OP_MaxPool_f, pad, act, {input, window, stride}, outs);
+    return model->addFloatOperationWithActivation(OP_MaxPool_f, pad, act,
+                                                  {input, window, stride}, outs);
 }
 
 bool mul(const std::vector<uint32_t>& ins, const std::vector<uint32_t>& outs,
@@ -481,7 +486,8 @@ bool conv_2d(const std::vector<uint32_t>& ins, const std::vector<uint32_t>& outs
 
     // add node to graph
     return model->addFusedQuant8Operation(OP_QuantizedConv2d_8x8to32, pad, bias, act,
-                                          {input, filter, input_min, input_max, filter_min, filter_max, stride}, outs);
+                                          {input, filter, input_min, input_max,
+                                            filter_min, filter_max, stride}, outs);
 }
 
 bool depthwise_conv_2d(const std::vector<uint32_t>& ins, const std::vector<uint32_t>& outs,
@@ -517,10 +523,12 @@ bool depthwise_conv_2d(const std::vector<uint32_t>& ins, const std::vector<uint3
 
     // add node to graph
     return model->addFusedQuant8Operation(OP_QuantizedDepthwiseConv2d_8x8to32, pad, bias, act,
-                                          {input, filter, input_min, input_max, filter_min, filter_max, stride}, outs);
+                                          {input, filter, input_min, input_max, filter_min,
+                                            filter_max, stride}, outs);
 }
 
-bool dequantize(const std::vector<uint32_t>& ins, const std::vector<uint32_t>& outs, HexagonModel* model) {
+bool dequantize(const std::vector<uint32_t>& ins, const std::vector<uint32_t>& outs,
+                HexagonModel* model) {
     HEXAGON_SOFT_ASSERT_EQ(1, ins.size(), "Need 1 input for quant8_asym::dequantize");
     HEXAGON_SOFT_ASSERT_EQ(1, outs.size(), "Need 1 output for quant8_asym::dequantize");
 
@@ -553,7 +561,8 @@ bool fully_connected(const std::vector<uint32_t>& ins, const std::vector<uint32_
 
     // add node to graph
     return model->addFusedQuant8Operation(OP_QuantizedMatMul_8x8to32, NN_PAD_NA, bias, act,
-                                          {input, weights, input_min, input_max, weights_min, weights_max}, outs);
+                                          {input, weights, input_min, input_max,
+                                            weights_min, weights_max}, outs);
 }
 
 bool logistic(const std::vector<uint32_t>& ins, const std::vector<uint32_t>& outs,
@@ -570,8 +579,9 @@ bool logistic(const std::vector<uint32_t>& ins, const std::vector<uint32_t>& out
     const hexagon_nn_input  input_max = model->createQuantizationValue(ins[0], 256);
 
     // add node to graph
-    //return model->addBasicOperation(OP_QuantizedSigmoid_8, NN_PAD_NA, {input, input_min, input_max}, outs);
-    return model->addBasicOperation(OP_QuantizedSigmoid_8_ref, NN_PAD_NA, {input, input_min, input_max}, outs);
+    //return model->addBasicOperation(OP_QuantizedSigmoid_8_ref, NN_PAD_NA,
+    return model->addBasicOperation(OP_QuantizedSigmoid_8, NN_PAD_NA,
+                                    {input, input_min, input_max}, outs);
 }
 
 bool max_pool_2d(const std::vector<uint32_t>& ins, const std::vector<uint32_t>& outs,
@@ -637,7 +647,8 @@ bool relu(const std::vector<uint32_t>& ins, const std::vector<uint32_t>& outs,
     const hexagon_nn_input& input_max = model->getQuantizationMax(ins[0]);
 
     // add node to graph
-    return model->addBasicOperation(OP_QuantizedRelu_8, NN_PAD_NA, {input, input_min, input_max}, outs);
+    return model->addBasicOperation(OP_QuantizedRelu_8, NN_PAD_NA,
+                                    {input, input_min, input_max}, outs);
 }
 
 bool relu1(const std::vector<uint32_t>& ins, const std::vector<uint32_t>& outs,
@@ -654,7 +665,8 @@ bool relu1(const std::vector<uint32_t>& ins, const std::vector<uint32_t>& outs,
     const hexagon_nn_input& input_max = model->getQuantizationMax(ins[0]);
 
     // add node to graph
-    return model->addBasicOperation(OP_QuantizedClamp_8, NN_PAD_NA, {input, input_min, input_max, min, max}, outs);
+    return model->addBasicOperation(OP_QuantizedClamp_8, NN_PAD_NA,
+                                    {input, input_min, input_max, min, max}, outs);
 }
 
 bool relu6(const std::vector<uint32_t>& ins, const std::vector<uint32_t>& outs,
@@ -670,10 +682,12 @@ bool relu6(const std::vector<uint32_t>& ins, const std::vector<uint32_t>& outs,
     const hexagon_nn_input& input_max = model->getQuantizationMax(ins[0]);
 
     // add node to graph
-    return model->addBasicOperation(OP_QuantizedReluX_8, NN_PAD_NA, {input, input_min, input_max, max}, outs);
+    return model->addBasicOperation(OP_QuantizedReluX_8, NN_PAD_NA,
+                                    {input, input_min, input_max, max}, outs);
 }
 
-bool reshape(const std::vector<uint32_t>& ins, const std::vector<uint32_t>& outs, HexagonModel* model) {
+bool reshape(const std::vector<uint32_t>& ins, const std::vector<uint32_t>& outs,
+             HexagonModel* model) {
     HEXAGON_SOFT_ASSERT_EQ(2, ins.size(), "Need 2 inputs for quant8_asym::reshape");
     HEXAGON_SOFT_ASSERT_EQ(1, outs.size(), "Need 1 output for quant8_asym::reshape");
 
@@ -685,7 +699,8 @@ bool reshape(const std::vector<uint32_t>& ins, const std::vector<uint32_t>& outs
     const hexagon_nn_input& input_max = model->getQuantizationMax(ins[0]);
 
     // add node to graph
-    return model->addBasicOperation(OP_QuantizedReshape, NN_PAD_NA, {input, newdims, input_min, input_max}, outs);
+    return model->addBasicOperation(OP_QuantizedReshape, NN_PAD_NA,
+                                    {input, newdims, input_min, input_max}, outs);
 }
 
 bool softmax(const std::vector<uint32_t>& ins, const std::vector<uint32_t>& outs,
@@ -701,7 +716,9 @@ bool softmax(const std::vector<uint32_t>& ins, const std::vector<uint32_t>& outs
     const hexagon_nn_input& input_max = model->getQuantizationMax(ins[0]);
 
     // add node to graph
-    return model->addBasicOperation(OP_QuantizedSoftmax_8_ref, NN_PAD_NA, {input, input_min, input_max, beta}, outs);
+    //return model->addBasicOperation(OP_QuantizedSoftmax_8_ref, NN_PAD_NA,
+    return model->addBasicOperation(OP_QuantizedSoftmax_8, NN_PAD_NA,
+                                    {input, input_min, input_max, beta}, outs);
 }
 
 }  // quant8_asym namespace

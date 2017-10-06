@@ -27,23 +27,21 @@ namespace neuralnetworks {
 namespace V1_0 {
 namespace implementation {
 
-PreparedModel::PreparedModel(const Model& neuralNetworksModel, hexagon::Model&& model) :
-        mNeuralNetworksModel(neuralNetworksModel), mHexagonModel(std::move(model)) {}
+PreparedModel::PreparedModel(const Model& neuralNetworksModel,
+                             const std::shared_ptr<hexagon::Model>& hexagonModel) :
+        mNeuralNetworksModel(neuralNetworksModel), mHexagonModel(hexagonModel) {}
 
 PreparedModel::~PreparedModel() {}
 
-void PreparedModel::asyncExecute(const Request& request, const sp<IExecutionCallback>& callback) {
-    // For now, only one thread can execute on HVX for a given model at one time
-    std::lock_guard<std::mutex> guard(mMutex);
-    ErrorStatus status = mHexagonModel.execute(request) == true ?
+static void asyncExecute(const std::shared_ptr<hexagon::Model>& model, const Request& request,
+                         const sp<IExecutionCallback>& callback) {
+    ErrorStatus status = model->execute(request) == true ?
             ErrorStatus::NONE : ErrorStatus::GENERAL_FAILURE;
     callback->notify(status);
 }
 
 Return<ErrorStatus> PreparedModel::execute(const Request& request,
                                            const sp<IExecutionCallback>& callback) {
-    LOG(INFO) << "PreparedModel::execute";
-
     if (callback.get() == nullptr) {
         LOG(ERROR) << "invalid callback passed to execute";
         return ErrorStatus::INVALID_ARGUMENT;
@@ -59,7 +57,7 @@ Return<ErrorStatus> PreparedModel::execute(const Request& request,
 
     // This thread is intentionally detached because the sample driver service
     // is expected to live forever.
-    std::thread([this, request, callback]{ return asyncExecute(request, callback); }).detach();
+    std::thread(asyncExecute, mHexagonModel, request, callback).detach();
 
     return ErrorStatus::NONE;
 }
