@@ -184,6 +184,11 @@ const hexagon_nn_input& Model::getQuantizationMax(uint32_t operand) {
     return operandInfo.hexagon_input_max;
 }
 
+hexagon_nn_padding_type Model::getPadding(uint32_t operand) {
+    const int32_t padding = getScalar<int32_t>(operand);
+    return hexagon::getPadding(padding);
+}
+
 hexagon_nn_input Model::createQuantizationValue(uint32_t operand, uint32_t quant_value) {
     OperandInfo& operandInfo = mOperands[operand];
     float real_value = (quant_value - operandInfo.zeroPoint) * operandInfo.scale;
@@ -222,18 +227,20 @@ hexagon_nn_input Model::createDepthwiseFilterTensor(uint32_t operand, int32_t de
 hexagon_nn_input Model::createFullyConnectedWeightTensor(uint32_t operand) {
     OperandInfo& operandInfo = mOperands[operand];
     std::vector<uint32_t> dims = getAlignedDimensions(mOperands[operand].dimensions, 4);
-    HEXAGON_SOFT_ASSERT_NE(0ul, dims.size(), "Need at most 2 dimensions");
+    HEXAGON_SOFT_ASSERT_NE(0ul, dims.size(), "Need at most 4 dimensions");
     // WC --> CW
+    uint32_t num_units = dims[0] * dims[1] * dims[2];
+    uint32_t input_size = dims[3];
     if (getShape(operand).type == OperandType::TENSOR_FLOAT32) {
-        std::vector<float> transposed = transpose<float>(dims[0], dims[1],
+        std::vector<float> transposed = transpose<float>(num_units, input_size,
                 reinterpret_cast<const float*>(operandInfo.buffer));
-        return createTensorInternal(1, 1, dims[1], dims[0],
+        return createTensorInternal(1, 1, input_size, num_units,
                 reinterpret_cast<const uint8_t*>(transposed.data()), operandInfo.length);
     }
     else {
-        std::vector<uint8_t> transposed = transpose<uint8_t>(dims[0], dims[1],
+        std::vector<uint8_t> transposed = transpose<uint8_t>(num_units, input_size,
                 reinterpret_cast<const uint8_t*>(operandInfo.buffer));
-        return createTensorInternal(1, 1, dims[1], dims[0],
+        return createTensorInternal(1, 1, input_size, num_units,
                 reinterpret_cast<const uint8_t*>(transposed.data()), operandInfo.length);
     }
 }
@@ -407,6 +414,8 @@ bool Model::addFusedQuant8Operation(op_type op,
                                     const std::vector<uint32_t>& outputs) {
     HEXAGON_SOFT_ASSERT_EQ(1, outputs.size(), "addFusedQuant8Operation requires 1 output");
     std::vector<hexagon_nn_input> actArgs = setupActivationArgs(activation);
+    const hexagon_nn_input& new_min = getQuantizationMin(outputs[0]);
+    const hexagon_nn_input& new_max = getQuantizationMax(outputs[0]);
     uint32_t node;
 
     hexagon_nn_output tensor_out8 = make_hexagon_nn_output(mOperands[outputs[0]].dimensions,
@@ -421,22 +430,18 @@ bool Model::addFusedQuant8Operation(op_type op,
     // base operation
     node = addOperationInternal(op, pad, inputs, out32);
     HEXAGON_SOFT_ASSERT_NE(0, node, "Error adding base operation");
+    const hexagon_nn_input old_min = {.src_id = node, .output_idx = 1};
+    const hexagon_nn_input old_max = {.src_id = node, .output_idx = 2};
 
     // add bias
     if (bias != hexagon_nn_input{}) {
         std::vector<hexagon_nn_input> buffer1_in = {{.src_id = node, .output_idx = 0}, bias,
-                {.src_id = node, .output_idx = 1}, {.src_id = node, .output_idx = 2},
-                {.src_id = node, .output_idx = 1}, {.src_id = node, .output_idx = 2}};
-        node = addOperationInternal(OP_QuantizedBiasAdd_32p32to32, NN_PAD_NA, buffer1_in,
-                                    {tensor_out32});
+                                                    old_min, old_max, old_min, old_max};
+        node = addOperationInternal(OP_QuantizedBiasAdd_32p32to32, NN_PAD_NA, buffer1_in, out32);
         HEXAGON_SOFT_ASSERT_NE(0, node, "Error adding bias operation");
     }
 
     // requantize
-    const hexagon_nn_input old_min = {.src_id = node, .output_idx = 1};
-    const hexagon_nn_input old_max = {.src_id = node, .output_idx = 2};
-    const hexagon_nn_input& new_min = getQuantizationMin(outputs[0]);
-    const hexagon_nn_input& new_max = getQuantizationMax(outputs[0]);
     const hexagon_nn_input buffer2_in = {.src_id = node, .output_idx = 0};
     node = addOperationInternal(OP_Requantize_32to8, NN_PAD_NA,
                                 {buffer2_in, old_min, old_max, new_min, new_max}, out8);
@@ -459,6 +464,8 @@ bool Model::verifyOperations() {
 
 bool Model::verifyOperands() {
     for (const OperandInfo& operand : mOperands) {
+        HEXAGON_SOFT_ASSERT_GE(4ul, operand.dimensions.size(),
+                               "Operand must have at most 4 dimensions");
         for (uint32_t dim : operand.dimensions) {
             HEXAGON_SOFT_ASSERT_NE(0, dim, "At least one operand with unknown dimension");
         }

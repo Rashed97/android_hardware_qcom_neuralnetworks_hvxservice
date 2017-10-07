@@ -99,6 +99,7 @@ public:
     template<typename Type> Type getScalar(uint32_t operand);
     op_type getFloatActivation(uint32_t operand);
     op_type getQuantizedActivation(uint32_t operand);
+    hexagon_nn_padding_type getPadding(uint32_t operand);
 
     template<typename Type> hexagon_nn_input createTensor(
             uint32_t B, uint32_t H, uint32_t W, uint32_t D, const std::vector<Type>& values);

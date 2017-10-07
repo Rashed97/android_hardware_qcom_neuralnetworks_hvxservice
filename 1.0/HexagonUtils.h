@@ -82,7 +82,7 @@ std::vector<Type> transpose(uint32_t height, uint32_t width, const Type* input) 
     std::vector<Type> output(height * width);
     for (uint32_t i = 0; i < height; ++i) {
         for (uint32_t j = 0; j < width; ++j) {
-            output[i*width + j] = input[j*height + i];
+            output[j*height + i] = input[i*width + j];
         }
     }
     return output;
