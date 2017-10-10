@@ -76,8 +76,10 @@ bool average_pool_2d(const std::vector<uint32_t>& ins, const std::vector<uint32_
         filter_height                = model->getScalar<int32_t>(ins[8]);
         act                          = model->getFloatActivation(ins[9]);
 
-        pad = getPadding(filter_width, filter_height, padding_left,
-                         padding_right, padding_top, padding_bottom);
+        const Shape inputShape = model->getShape(ins[0]);
+        pad = getPadding(inputShape.dimensions[2], inputShape.dimensions[1],
+                         stride_width, stride_height, filter_width, filter_height,
+                         padding_left, padding_right, padding_top, padding_bottom);
         HEXAGON_SOFT_ASSERT_NE(pad, NN_PAD_NA, "Unknown padding");
     }
     else {
@@ -146,9 +148,12 @@ bool conv_2d(const std::vector<uint32_t>& ins, const std::vector<uint32_t>& outs
         stride_height                = model->getScalar<int32_t>(ins[8]);
         act                          = model->getFloatActivation(ins[9]);
 
+        const Shape inputShape = model->getShape(ins[0]);
         const Shape filterShape = model->getShape(ins[1]);
-        pad = getPadding(filterShape.dimensions[2], filterShape.dimensions[1], padding_left,
-                         padding_right, padding_top, padding_bottom);
+        pad = getPadding(inputShape.dimensions[2], inputShape.dimensions[1],
+                         stride_width, stride_height, filterShape.dimensions[2],
+                         filterShape.dimensions[1], padding_left, padding_right,
+                         padding_top, padding_bottom);
         HEXAGON_SOFT_ASSERT_NE(pad, NN_PAD_NA, "Unknown padding");
     }
     else {
@@ -195,9 +200,12 @@ bool depthwise_conv_2d(const std::vector<uint32_t>& ins, const std::vector<uint3
         depth_multiplier             = model->getScalar<int32_t>(ins[9]);
         act                          = model->getFloatActivation(ins[10]);
 
+        const Shape inputShape = model->getShape(ins[0]);
         const Shape filterShape = model->getShape(ins[1]);
-        pad = getPadding(filterShape.dimensions[2], filterShape.dimensions[1], padding_left,
-                         padding_right, padding_top, padding_bottom);
+        pad = getPadding(inputShape.dimensions[2], inputShape.dimensions[1],
+                         stride_width, stride_height, filterShape.dimensions[2],
+                         filterShape.dimensions[1], padding_left, padding_right,
+                         padding_top, padding_bottom);
         HEXAGON_SOFT_ASSERT_NE(pad, NN_PAD_NA, "Unknown padding");
     }
     else {
@@ -262,8 +270,10 @@ bool l2_pool_2d(const std::vector<uint32_t>& ins, const std::vector<uint32_t>& o
         filter_height                = model->getScalar<int32_t>(ins[8]);
         act                          = model->getFloatActivation(ins[9]);
 
-        pad = getPadding(filter_width, filter_height, padding_left,
-                         padding_right, padding_top, padding_bottom);
+        const Shape inputShape = model->getShape(ins[0]);
+        pad = getPadding(inputShape.dimensions[2], inputShape.dimensions[1],
+                         stride_width, stride_height, filter_width, filter_height,
+                         padding_left, padding_right, padding_top, padding_bottom);
         HEXAGON_SOFT_ASSERT_NE(pad, NN_PAD_NA, "Unknown padding");
     }
     else {
@@ -346,8 +356,10 @@ bool max_pool_2d(const std::vector<uint32_t>& ins, const std::vector<uint32_t>& 
         filter_height                = model->getScalar<int32_t>(ins[8]);
         act                          = model->getFloatActivation(ins[9]);
 
-        pad = getPadding(filter_width, filter_height, padding_left,
-                         padding_right, padding_top, padding_bottom);
+        const Shape inputShape = model->getShape(ins[0]);
+        pad = getPadding(inputShape.dimensions[2], inputShape.dimensions[1],
+                         stride_width, stride_height, filter_width, filter_height,
+                         padding_left, padding_right, padding_top, padding_bottom);
         HEXAGON_SOFT_ASSERT_NE(pad, NN_PAD_NA, "Unknown padding");
     }
     else {
@@ -531,8 +543,10 @@ bool average_pool_2d(const std::vector<uint32_t>& ins, const std::vector<uint32_
         filter_height                = model->getScalar<int32_t>(ins[8]);
         act                          = model->getQuantizedActivation(ins[9]);
 
-        pad = getPadding(filter_width, filter_height, padding_left,
-                         padding_right, padding_top, padding_bottom);
+        const Shape inputShape = model->getShape(ins[0]);
+        pad = getPadding(inputShape.dimensions[2], inputShape.dimensions[1],
+                         stride_width, stride_height, filter_width, filter_height,
+                         padding_left, padding_right, padding_top, padding_bottom);
         HEXAGON_SOFT_ASSERT_NE(pad, NN_PAD_NA, "Unknown padding");
     }
     else {
@@ -605,9 +619,12 @@ bool conv_2d(const std::vector<uint32_t>& ins, const std::vector<uint32_t>& outs
         stride_height                = model->getScalar<int32_t>(ins[8]);
         act                          = model->getQuantizedActivation(ins[9]);
 
+        const Shape inputShape = model->getShape(ins[0]);
         const Shape filterShape = model->getShape(ins[1]);
-        pad = getPadding(filterShape.dimensions[2], filterShape.dimensions[1], padding_left,
-                         padding_right, padding_top, padding_bottom);
+        pad = getPadding(inputShape.dimensions[2], inputShape.dimensions[1],
+                         stride_width, stride_height, filterShape.dimensions[2],
+                         filterShape.dimensions[1], padding_left, padding_right,
+                         padding_top, padding_bottom);
         HEXAGON_SOFT_ASSERT_NE(pad, NN_PAD_NA, "Unknown padding");
     }
     else {
@@ -658,9 +675,12 @@ bool depthwise_conv_2d(const std::vector<uint32_t>& ins, const std::vector<uint3
         depth_multiplier             = model->getScalar<int32_t>(ins[9]);
         act                          = model->getQuantizedActivation(ins[10]);
 
+        const Shape inputShape = model->getShape(ins[0]);
         const Shape filterShape = model->getShape(ins[1]);
-        pad = getPadding(filterShape.dimensions[2], filterShape.dimensions[1], padding_left,
-                         padding_right, padding_top, padding_bottom);
+        pad = getPadding(inputShape.dimensions[2], inputShape.dimensions[1],
+                         stride_width, stride_height, filterShape.dimensions[2],
+                         filterShape.dimensions[1], padding_left, padding_right,
+                         padding_top, padding_bottom);
         HEXAGON_SOFT_ASSERT_NE(pad, NN_PAD_NA, "Unknown padding");
     }
     else {
@@ -770,8 +790,10 @@ bool max_pool_2d(const std::vector<uint32_t>& ins, const std::vector<uint32_t>& 
         filter_height                = model->getScalar<int32_t>(ins[8]);
         act                          = model->getQuantizedActivation(ins[9]);
 
-        pad = getPadding(filter_width, filter_height, padding_left,
-                         padding_right, padding_top, padding_bottom);
+        const Shape inputShape = model->getShape(ins[0]);
+        pad = getPadding(inputShape.dimensions[2], inputShape.dimensions[1],
+                         stride_width, stride_height, filter_width, filter_height,
+                         padding_left, padding_right, padding_top, padding_bottom);
         HEXAGON_SOFT_ASSERT_NE(pad, NN_PAD_NA, "Unknown padding");
     }
     else {
