@@ -60,9 +60,9 @@ op_type getFloatActivationFunction(FusedActivationFunc act) {
         case FusedActivationFunc::RELU:
             return OP_Relu_f;
         case FusedActivationFunc::RELU1:
-            return OP_ReluX_f;
-        case FusedActivationFunc::RELU6:
             return OP_Clamp_f;
+        case FusedActivationFunc::RELU6:
+            return OP_ReluX_f;
         case FusedActivationFunc::NONE:
             FALLTHROUGH_INTENDED;
         default:
@@ -75,9 +75,9 @@ op_type getQuantizedActivationFunction(FusedActivationFunc act) {
         case FusedActivationFunc::RELU:
             return OP_QuantizedRelu_8;
         case FusedActivationFunc::RELU1:
-            return OP_QuantizedReluX_8;
-        case FusedActivationFunc::RELU6:
             return OP_QuantizedClamp_8;
+        case FusedActivationFunc::RELU6:
+            return OP_QuantizedReluX_8;
         case FusedActivationFunc::NONE:
             FALLTHROUGH_INTENDED;
         default:
