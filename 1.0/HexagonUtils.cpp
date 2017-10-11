@@ -48,10 +48,13 @@ hexagon_nn_padding_type getPadding(uint32_t pad) {
     };
 }
 
-hexagon_nn_padding_type getPadding(uint32_t filterWidth, uint32_t filterHeight,
-                                   uint32_t paddingLeft, uint32_t paddingRight,
-                                   uint32_t paddingTop, uint32_t paddingBottom) {
-    return getPadding(::android::nn::getPaddingScheme(filterWidth, filterHeight, paddingLeft,
+hexagon_nn_padding_type getPadding(int32_t inWidth, int32_t inHeight,
+                                   int32_t strideWidth, int32_t strideHeight,
+                                   int32_t filterWidth, int32_t filterHeight,
+                                   int32_t paddingLeft, int32_t paddingRight,
+                                   int32_t paddingTop, int32_t paddingBottom) {
+    return getPadding(::android::nn::getPaddingScheme(inWidth, inHeight, strideWidth, strideHeight,
+                                                      filterWidth, filterHeight, paddingLeft,
                                                       paddingRight, paddingTop, paddingBottom));
 }
 
