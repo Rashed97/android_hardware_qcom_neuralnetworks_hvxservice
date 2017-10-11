@@ -85,8 +85,11 @@ bool pool(const std::vector<uint32_t>& ins, const std::vector<uint32_t>& outs,
         filter_width   = model->getScalar<int32_t>(ins[7]);
         filter_height  = model->getScalar<int32_t>(ins[8]);
 
-        HEXAGON_SOFT_ASSERT_NE(getPadding(filter_width, filter_height, padding_left,
-                                          padding_right, padding_top, padding_bottom),
+        HEXAGON_SOFT_ASSERT_NE(getPadding(inShape.dimensions[2], inShape.dimensions[1],
+                                          stride_width, stride_height,
+                                          filter_width, filter_height,
+                                          padding_left, padding_right,
+                                          padding_top, padding_bottom),
                                NN_PAD_NA, "Unknown padding");
     }
     else {
@@ -178,8 +181,9 @@ bool conv_2d(const std::vector<uint32_t>& ins, const std::vector<uint32_t>& outs
         stride_width   = model->getScalar<int32_t>(ins[7]);
         stride_height  = model->getScalar<int32_t>(ins[8]);
 
-        HEXAGON_SOFT_ASSERT_NE(getPadding(filterShape.dimensions[2], filterShape.dimensions[1],
-                                          padding_left, padding_right,
+        HEXAGON_SOFT_ASSERT_NE(getPadding(inputShape.dimensions[2], inputShape.dimensions[1],
+                                          stride_width, stride_height, filterShape.dimensions[2],
+                                          filterShape.dimensions[1], padding_left, padding_right,
                                           padding_top, padding_bottom),
                                NN_PAD_NA, "Unknown padding");
     }
@@ -238,10 +242,12 @@ bool depthwise_conv_2d(const std::vector<uint32_t>& ins, const std::vector<uint3
         stride_width   = model->getScalar<int32_t>(ins[7]);
         stride_height  = model->getScalar<int32_t>(ins[8]);
 
-        HEXAGON_SOFT_ASSERT_NE(getPadding(filterShape.dimensions[2], filterShape.dimensions[1],
-                                          padding_left, padding_right,
+        HEXAGON_SOFT_ASSERT_NE(getPadding(inputShape.dimensions[2], inputShape.dimensions[1],
+                                          stride_width, stride_height, filterShape.dimensions[2],
+                                          filterShape.dimensions[1], padding_left, padding_right,
                                           padding_top, padding_bottom),
                                NN_PAD_NA, "Unknown padding");
+
     }
     else {
         const int32_t padding_implicit = model->getScalar<int32_t>(ins[3]);
