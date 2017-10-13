@@ -44,14 +44,16 @@ static void configureHexagon() {
 Return<void> Device::getCapabilities(getCapabilities_cb _hidl_cb) {
     configureHexagon();
 
+    // These numbers are approximations for this release.
+    // TODO Change with the actual number.
     PerformanceInfo float32Performance = {
-        .execTime   = 100.0f, // nanoseconds?
-        .powerUsage = 1.0f,   // picoJoules
+        .execTime   = 30.0f,
+        .powerUsage = 2.0f,
     };
 
     PerformanceInfo quantized8Performance = {
-        .execTime   = 100.0f, // nanoseconds?
-        .powerUsage = 1.0f,   // picoJoules
+        .execTime   = 0.7f,
+        .powerUsage = 0.7f,
     };
 
     Capabilities capabilities = {
