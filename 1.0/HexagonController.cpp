@@ -21,10 +21,35 @@
 #define LOAD_HEXAGON_FUNCTION(name) \
     mFn_##name = loadFunction<hexagon_nn_controller_##name##_fn>("hexagon_nn_controller_"#name);
 
-#define CONTROLLER_CHECK(function, ...)                         \
-    int err = mFn_##function(__VA_ARGS__);                      \
-    if (err != 0) {                                             \
-        return err;                                             \
+#define CLOSE_HEXAGON_FUNCTION(name) mFn_##name = nullptr;
+
+#define FOR_EACH_FUNCTION(MACRO)   \
+    MACRO(init)                    \
+    MACRO(getlog)                  \
+    MACRO(snpprint)                \
+    MACRO(set_debug_level)         \
+    MACRO(prepare)                 \
+    MACRO(append_node)             \
+    MACRO(append_const_node)       \
+    MACRO(execute_new)             \
+    MACRO(execute)                 \
+    MACRO(teardown)                \
+    MACRO(get_perfinfo)            \
+    MACRO(reset_perfinfo)          \
+    MACRO(version)                 \
+    MACRO(last_execution_cycles)   \
+    MACRO(GetHexagonBinaryVersion) \
+    MACRO(PrintLog)                \
+    MACRO(op_name_to_id)           \
+    MACRO(op_id_to_name)           \
+    MACRO(disable_dcvs)            \
+    MACRO(set_powersave_level)     \
+    MACRO(config)
+
+#define CONTROLLER_CHECK(function, ...)    \
+    int err = mFn_##function(__VA_ARGS__); \
+    if (err != 0) {                        \
+        return err;                        \
     }
 
 namespace android {
@@ -34,41 +59,35 @@ namespace V1_0 {
 namespace implementation {
 namespace hexagon {
 
+const char Controller::kFilename[] = "libhexagon_nn_controller.so";
+
 Controller::Controller() {
-    const char* filename = "libhexagon_nn_controller.so";
-
-    mHandle = dlopen(filename, RTLD_LAZY | RTLD_LOCAL);
-    if (mHandle == nullptr) {
-        LOG(ERROR) << "FAILED TO LOAD LIBRARY libhexagon_nn_controller: " << dlerror();
-    }
-
-    LOAD_HEXAGON_FUNCTION(init)
-    LOAD_HEXAGON_FUNCTION(getlog)
-    LOAD_HEXAGON_FUNCTION(snpprint)
-    LOAD_HEXAGON_FUNCTION(set_debug_level)
-    LOAD_HEXAGON_FUNCTION(prepare)
-    LOAD_HEXAGON_FUNCTION(append_node)
-    LOAD_HEXAGON_FUNCTION(append_const_node)
-    LOAD_HEXAGON_FUNCTION(execute_new)
-    LOAD_HEXAGON_FUNCTION(execute)
-    LOAD_HEXAGON_FUNCTION(teardown)
-    LOAD_HEXAGON_FUNCTION(get_perfinfo)
-    LOAD_HEXAGON_FUNCTION(reset_perfinfo)
-    LOAD_HEXAGON_FUNCTION(version)
-    LOAD_HEXAGON_FUNCTION(last_execution_cycles)
-    LOAD_HEXAGON_FUNCTION(GetHexagonBinaryVersion)
-    LOAD_HEXAGON_FUNCTION(PrintLog)
-    LOAD_HEXAGON_FUNCTION(op_name_to_id)
-    LOAD_HEXAGON_FUNCTION(op_id_to_name)
-    LOAD_HEXAGON_FUNCTION(disable_dcvs)
-    LOAD_HEXAGON_FUNCTION(set_powersave_level)
-    LOAD_HEXAGON_FUNCTION(config)
+    openNnlib();
 }
 
 Controller::~Controller() {
+    closeNnlib();
+}
+
+bool Controller::openNnlib() {
+    mHandle = dlopen(kFilename, RTLD_LAZY | RTLD_LOCAL);
+    HEXAGON_SOFT_ASSERT_NE(mHandle, 0, "FAILED TO LOAD LIBRARY "/* << kFilename << ": " << dlerror()*/);
+    FOR_EACH_FUNCTION(LOAD_HEXAGON_FUNCTION)
+    return true;
+}
+
+bool Controller::closeNnlib() {
+    FOR_EACH_FUNCTION(CLOSE_HEXAGON_FUNCTION)
     if (mHandle != nullptr) {
-        dlclose(mHandle);
+        int err = dlclose(mHandle);
+        mHandle = nullptr;
+        HEXAGON_SOFT_ASSERT_EQ(err, 0, "FAILED TO CLOSE LIBRARY " << kFilename);
     }
+    return true;
+}
+
+bool Controller::resetNnlib() {
+    return closeNnlib() && openNnlib();
 }
 
 Controller& Controller::getInstance() {

@@ -198,7 +198,7 @@ DEF_OP(FullyConnected_u8)
 DEF_OP_WREF(QuantizedFC_8x8p8to8)
 #endif
 
-DEF_OP_WREF(QuantizedAdd_8x8to8_d32)
+DEF_OP_WREF(QuantizedAdd_8p8to8_d32)
 
 DEF_OP_WREF(QuantizedClamp_8)
 DEF_OP(Clamp_f)
@@ -216,6 +216,13 @@ DEF_OP(DepthwiseSupernode_8x8p32to8)
 DEF_OP(Supernode_8x8p32to8_d32)
 DEF_OP(DepthwiseSupernode_8x8p32to8_d32)
 DEF_OP(InputSupernode_8x8p32to8_outd32)
+
+DEF_OP(PPrint_8_d32)
+DEF_OP(PPrintWithPadding_8_d32)
+DEF_OP_WREF(AutoQuantize_d32)
+
+DEF_OP_WREF(QuantizedTanh_8_d32)
+DEF_OP_WREF(QuantizedSigmoid_8_d32)
 
 #ifdef __SELF_DEF_OP_WREF
 #undef __SELF_DEF_OP_WREF

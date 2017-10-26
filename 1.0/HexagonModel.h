@@ -79,8 +79,8 @@ public:
     Model(const NeuralnetworksModel& model);
     ~Model();
 
-    std::string getDebugLog();
     std::string getLog();
+    std::string getGraph();
 
     // model check
     const int32_t* getPointer(uint32_t operand);
@@ -127,13 +127,13 @@ public:
                                 const std::vector<uint32_t>& outputs);
     bool addFusedQuant8Operation(op_type op,
                                  hexagon_nn_padding_type pad,
-                                 const hexagon_nn_input& bias,
+                                 const std::vector<hexagon_nn_input>& bias,
                                  op_type activation,
                                  const std::vector<hexagon_nn_input>& inputs,
                                  const std::vector<uint32_t>& outputs);
 
     std::vector<bool> supportedOperations();
-    bool compile();
+    bool prepare();
     bool execute(const Request& request);
 
 private:
@@ -155,7 +155,7 @@ private:
     bool addOperations();
     bool addOutputs();
 
-    void resetModel();
+    void clearModel();
 
 // members
     hexagon_nn_nn_id             mGraphId;

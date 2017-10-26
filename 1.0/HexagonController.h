@@ -49,8 +49,12 @@ private:
         return reinterpret_cast<Function>(fn);
     }
 
+    bool openNnlib();
+    bool closeNnlib();
+
 public:
     static Controller& getInstance();
+    bool resetNnlib();
 
     hexagon_nn_nn_id init();
 
@@ -132,7 +136,8 @@ public:
 
 // members
 private:
-    void*                                         mHandle;
+    static const char                                kFilename[];
+    void*                                            mHandle;
     hexagon_nn_controller_init_fn                    mFn_init;
     hexagon_nn_controller_getlog_fn                  mFn_getlog;
     hexagon_nn_controller_snpprint_fn                mFn_snpprint;

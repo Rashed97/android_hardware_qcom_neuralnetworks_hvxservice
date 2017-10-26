@@ -88,7 +88,7 @@ Return<void> Device::getSupportedOperations(const Model& model,
 void Device::asyncPrepare(const Model& model, const sp<IPreparedModelCallback>& callback) {
     std::shared_ptr<hexagon::Model> hexagonModel = std::make_shared<hexagon::Model>(model);
 
-    if (hexagonModel->compile()) {
+    if (hexagonModel->prepare()) {
         callback->notify(ErrorStatus::NONE, new PreparedModel(model, hexagonModel));
     }
     else {
@@ -113,9 +113,9 @@ Return<ErrorStatus> Device::prepareModel(const Model& model,
         return ErrorStatus::DEVICE_UNAVAILABLE;
     }
 
-    // This thread is intentionally detached because the sample driver service
-    // is expected to live forever.
-    std::thread([this, model, callback]{ asyncPrepare(model, callback); }).detach();
+    // TODO: once nnlib hanging issue is resolved, make this function
+    // asynchronous again
+    asyncPrepare(model, callback);
 
     return ErrorStatus::NONE;
 }

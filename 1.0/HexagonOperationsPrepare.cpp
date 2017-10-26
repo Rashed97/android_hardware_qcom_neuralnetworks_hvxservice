@@ -511,7 +511,7 @@ bool add(const std::vector<uint32_t>& ins, const std::vector<uint32_t>& outs,
 
     // add node to graph
     return model->addFusedQuant8Operation(OP_QuantizedAdd_8p8to32, NN_PAD_NA, {}, act,
-                                          {in1, in2, in1_min, in2_min, in1_max, in2_max}, outs);
+                                          {in1, in2, in1_min, in1_max, in2_min, in2_max}, outs);
 }
 
 bool average_pool_2d(const std::vector<uint32_t>& ins, const std::vector<uint32_t>& outs,
@@ -638,13 +638,15 @@ bool conv_2d(const std::vector<uint32_t>& ins, const std::vector<uint32_t>& outs
     const hexagon_nn_input& input_max  = model->getQuantizationMax(ins[0]);
     const hexagon_nn_input& filter_min = model->getQuantizationMin(ins[1]);
     const hexagon_nn_input& filter_max = model->getQuantizationMax(ins[1]);
+    const hexagon_nn_input& bias_min   = model->getQuantizationMin(ins[2]);
+    const hexagon_nn_input& bias_max   = model->getQuantizationMax(ins[2]);
 
     const hexagon_nn_input stride = model->createShape(1, stride_height, stride_width, 1);
 
     // add node to graph
-    return model->addFusedQuant8Operation(OP_QuantizedConv2d_8x8to32, pad, bias, act,
-                                          {input, filter, input_min, input_max,
-                                            filter_min, filter_max, stride}, outs);
+    return model->addFusedQuant8Operation(
+            OP_QuantizedConv2d_8x8to32, pad, {bias, bias_min, bias_max}, act,
+            {input, filter, input_min, input_max, filter_min, filter_max, stride}, outs);
 }
 
 bool depthwise_conv_2d(const std::vector<uint32_t>& ins, const std::vector<uint32_t>& outs,
@@ -695,14 +697,16 @@ bool depthwise_conv_2d(const std::vector<uint32_t>& ins, const std::vector<uint3
     const hexagon_nn_input& input_max  = model->getQuantizationMax(ins[0]);
     const hexagon_nn_input& filter_min = model->getQuantizationMin(ins[1]);
     const hexagon_nn_input& filter_max = model->getQuantizationMax(ins[1]);
+    const hexagon_nn_input& bias_min   = model->getQuantizationMin(ins[2]);
+    const hexagon_nn_input& bias_max   = model->getQuantizationMax(ins[2]);
 
     const hexagon_nn_input filter = model->createDepthwiseFilterTensor(ins[1], depth_multiplier);
     const hexagon_nn_input stride = model->createShape(1, stride_height, stride_width, 1);
 
     // add node to graph
-    return model->addFusedQuant8Operation(OP_QuantizedDepthwiseConv2d_8x8to32, pad, bias, act,
-                                          {input, filter, input_min, input_max, filter_min,
-                                            filter_max, stride}, outs);
+    return model->addFusedQuant8Operation(
+            OP_QuantizedDepthwiseConv2d_8x8to32, pad, {bias, bias_min, bias_max}, act,
+            {input, filter, input_min, input_max, filter_min, filter_max, stride}, outs);
 }
 
 bool dequantize(const std::vector<uint32_t>& ins, const std::vector<uint32_t>& outs,
@@ -736,11 +740,13 @@ bool fully_connected(const std::vector<uint32_t>& ins, const std::vector<uint32_
     const hexagon_nn_input& input_max   = model->getQuantizationMax(ins[0]);
     const hexagon_nn_input& weights_min = model->getQuantizationMin(ins[1]);
     const hexagon_nn_input& weights_max = model->getQuantizationMax(ins[1]);
+    const hexagon_nn_input& bias_min    = model->getQuantizationMin(ins[2]);
+    const hexagon_nn_input& bias_max    = model->getQuantizationMax(ins[2]);
 
     // add node to graph
-    return model->addFusedQuant8Operation(OP_QuantizedMatMul_8x8to32, NN_PAD_NA, bias, act,
-                                          {input, weights, input_min, input_max,
-                                            weights_min, weights_max}, outs);
+    return model->addFusedQuant8Operation(
+            OP_QuantizedMatMul_8x8to32, NN_PAD_NA, {bias, bias_min, bias_max}, act,
+            {input, weights, input_min, input_max, weights_min, weights_max}, outs);
 }
 
 bool logistic(const std::vector<uint32_t>& ins, const std::vector<uint32_t>& outs,

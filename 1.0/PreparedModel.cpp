@@ -55,9 +55,9 @@ Return<ErrorStatus> PreparedModel::execute(const Request& request,
         return ErrorStatus::DEVICE_UNAVAILABLE;
     }
 
-    // This thread is intentionally detached because the sample driver service
-    // is expected to live forever.
-    std::thread(asyncExecute, mHexagonModel, request, callback).detach();
+    // TODO: once nnlib hanging issue is resolved, make this function
+    // asynchronous again
+    asyncExecute(mHexagonModel, request, callback);
 
     return ErrorStatus::NONE;
 }

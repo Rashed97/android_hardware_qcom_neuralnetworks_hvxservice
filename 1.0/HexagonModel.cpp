@@ -46,10 +46,7 @@ static std::vector<OperandInfo> getOperandsInfo(const NeuralnetworksModel& model
     return info;
 }
 
-Model::Model(const NeuralnetworksModel& model) : mNodeCount(0), mCompiled(false) {
-    mGraphId = hexagon::Controller::getInstance().init();
-    hexagon::Controller::getInstance().set_debug_level(mGraphId, 99);
-
+Model::Model(const NeuralnetworksModel& model) : mGraphId(0), mNodeCount(0), mCompiled(false) {
     mPools = mapPools(model.pools);
     mOperands = getOperandsInfo(model, mPools);
     std::for_each(mPools.begin(), mPools.end(), [](RunTimePoolInfo& mem) { mem.update(); });
@@ -64,38 +61,39 @@ Model::Model(Model&& other) {
 }
 
 Model& Model::operator=(Model&& other) {
-    mNodeCount      = other.mNodeCount;
-    mGraphId        = other.mGraphId;
-    mCompiled       = other.mCompiled;
-    mOperands       = std::move(other.mOperands);
-    mOperations     = std::move(other.mOperations);
-    mInputs         = std::move(other.mInputs);
-    mOutputs        = std::move(other.mOutputs);
-    mPools          = std::move(other.mPools);
-    other.mGraphId  = {};
-    other.mCompiled = false;
+    if (this != &other) {
+        mNodeCount       = other.mNodeCount;
+        mGraphId         = other.mGraphId;
+        mCompiled        = other.mCompiled;
+        mOperands        = std::move(other.mOperands);
+        mOperations      = std::move(other.mOperations);
+        mInputs          = std::move(other.mInputs);
+        mOutputs         = std::move(other.mOutputs);
+        mPools           = std::move(other.mPools);
+        other.mNodeCount = 0;
+        other.mGraphId   = {};
+        other.mCompiled  = false;
+    }
     return *this;
 }
 
 Model::~Model() {
-    if (mGraphId != hexagon_nn_nn_id{}) {
-        hexagon::Controller::getInstance().teardown(mGraphId);
-    }
-}
-
-std::string Model::getDebugLog() {
-    char buffer[16*1024];
-    int err = hexagon::Controller::getInstance().getlog(
-            mGraphId, reinterpret_cast<uint8_t*>(buffer), sizeof(buffer));
-    HEXAGON_SOFT_ASSERT_EQ(0, err, "failed getDebugLog");
-    return buffer;
+    clearModel();
 }
 
 std::string Model::getLog() {
     char buffer[16*1024];
-    int err = hexagon::Controller::getInstance().snpprint(
+    int err = hexagon::Controller::getInstance().getlog(
             mGraphId, reinterpret_cast<uint8_t*>(buffer), sizeof(buffer));
     HEXAGON_SOFT_ASSERT_EQ(0, err, "failed getLog");
+    return buffer;
+}
+
+std::string Model::getGraph() {
+    char buffer[16*1024];
+    int err = hexagon::Controller::getInstance().snpprint(
+            mGraphId, reinterpret_cast<uint8_t*>(buffer), sizeof(buffer));
+    HEXAGON_SOFT_ASSERT_EQ(0, err, "failed getGraph");
     return buffer;
 }
 
@@ -167,8 +165,9 @@ const hexagon_nn_input& Model::getTensor(uint32_t operand) {
 const hexagon_nn_input& Model::getQuantizationMin(uint32_t operand) {
     OperandInfo& operandInfo = mOperands[operand];
     if (operandInfo.hexagon_input_min == hexagon_nn_input{}) {
-        float real_value =
-                (std::numeric_limits<uint8_t>::min() - operandInfo.zeroPoint) * operandInfo.scale;
+        float real_value = operandInfo.type == OperandType::TENSOR_QUANT8_ASYMM ?
+                (std::numeric_limits<uint8_t>::min() - operandInfo.zeroPoint) * operandInfo.scale :
+                std::numeric_limits<uint32_t>::min() * operandInfo.scale;
         operandInfo.hexagon_input_min = createValues<float>({real_value});
     }
     return operandInfo.hexagon_input_min;
@@ -177,8 +176,9 @@ const hexagon_nn_input& Model::getQuantizationMin(uint32_t operand) {
 const hexagon_nn_input& Model::getQuantizationMax(uint32_t operand) {
     OperandInfo& operandInfo = mOperands[operand];
     if (operandInfo.hexagon_input_max == hexagon_nn_input{}) {
-        float real_value =
-                (std::numeric_limits<uint8_t>::max() - operandInfo.zeroPoint) * operandInfo.scale;
+        float real_value = operandInfo.type == OperandType::TENSOR_QUANT8_ASYMM ?
+                (std::numeric_limits<uint8_t>::max() - operandInfo.zeroPoint) * operandInfo.scale :
+                std::numeric_limits<uint32_t>::max() * operandInfo.scale;
         operandInfo.hexagon_input_max = createValues<float>({real_value});
     }
     return operandInfo.hexagon_input_max;
@@ -408,7 +408,7 @@ bool Model::addFusedFloatOperation(op_type op,
 
 bool Model::addFusedQuant8Operation(op_type op,
                                     hexagon_nn_padding_type pad,
-                                    const hexagon_nn_input& bias,
+                                    const std::vector<hexagon_nn_input>& bias,
                                     op_type activation,
                                     const std::vector<hexagon_nn_input>& inputs,
                                     const std::vector<uint32_t>& outputs) {
@@ -430,28 +430,32 @@ bool Model::addFusedQuant8Operation(op_type op,
     // base operation
     node = addOperationInternal(op, pad, inputs, out32);
     HEXAGON_SOFT_ASSERT_NE(0, node, "Error adding base operation");
-    const hexagon_nn_input old_min = {.src_id = node, .output_idx = 1};
-    const hexagon_nn_input old_max = {.src_id = node, .output_idx = 2};
+    hexagon_nn_input previous     = {.src_id = node, .output_idx = 0};
+    hexagon_nn_input previous_min = {.src_id = node, .output_idx = 1};
+    hexagon_nn_input previous_max = {.src_id = node, .output_idx = 2};
 
     // add bias
-    if (bias != hexagon_nn_input{}) {
-        std::vector<hexagon_nn_input> buffer1_in = {{.src_id = node, .output_idx = 0}, bias,
-                                                    old_min, old_max, old_min, old_max};
-        node = addOperationInternal(OP_QuantizedBiasAdd_32p32to32, NN_PAD_NA, buffer1_in, out32);
+    if (bias.size() == 3) {
+        node = addOperationInternal(OP_QuantizedBiasAdd_32p32to32, NN_PAD_NA,
+                {previous, bias[0], previous_min, previous_max, bias[1], bias[2]}, out32);
         HEXAGON_SOFT_ASSERT_NE(0, node, "Error adding bias operation");
+        previous.src_id = node;
+        previous_min.src_id = node;
+        previous_max.src_id = node;
     }
 
     // requantize
-    const hexagon_nn_input buffer2_in = {.src_id = node, .output_idx = 0};
     node = addOperationInternal(OP_Requantize_32to8, NN_PAD_NA,
-                                {buffer2_in, old_min, old_max, new_min, new_max}, out8);
+                                {previous, previous_min, previous_max, new_min, new_max}, out8);
     HEXAGON_SOFT_ASSERT_NE(0, node, "Error adding requantize operation");
+    previous.src_id = node;
+    previous_min.src_id = node;
+    previous_max.src_id = node;
 
     // activation
-    std::vector<hexagon_nn_input> buffer3 = {{.src_id = node, .output_idx = 0},
-            {.src_id = node, .output_idx = 1}, {.src_id = node, .output_idx = 2}};
-    buffer3.insert(buffer3.end(), actArgs.begin(), actArgs.end());
-    node = addOperationInternal(activation, NN_PAD_NA, buffer3, out8);
+    std::vector<hexagon_nn_input> buffer = {previous, previous_min, previous_max};
+    buffer.insert(buffer.end(), actArgs.begin(), actArgs.end());
+    node = addOperationInternal(activation, NN_PAD_NA, buffer, out8);
     HEXAGON_SOFT_ASSERT_NE(0, node, "Error adding activation operation");
 
     return registerHexagonInputs(outputs, node);
@@ -526,17 +530,17 @@ bool Model::addOutputs() {
     return true;
 }
 
-void Model::resetModel() {
+void Model::clearModel() {
     mCompiled = false;
     for (OperandInfo& operand : mOperands) {
         operand.hexagon_input = {};
+        operand.hexagon_input_min = {};
+        operand.hexagon_input_max = {};
         operand.hexagon_output = {};
     }
     if (mGraphId != hexagon_nn_nn_id{}) {
         hexagon::Controller::getInstance().teardown(mGraphId);
     }
-    mGraphId = hexagon::Controller::getInstance().init();
-    hexagon::Controller::getInstance().set_debug_level(mGraphId, 99);
 }
 
 std::vector<bool> Model::supportedOperations() {
@@ -554,13 +558,17 @@ std::vector<bool> Model::supportedOperations() {
     return supported;
 }
 
-bool Model::compile() {
+bool Model::prepare() {
     if (!verifyOperations() || !verifyOperands()) {
         return false;
     }
 
+    mGraphId = hexagon::Controller::getInstance().init();
+    HEXAGON_SOFT_ASSERT_NE(0, mGraphId, "Hexagon could not allocate new graph");
+    hexagon::Controller::getInstance().set_debug_level(mGraphId, 0);
+
     if (!addInputs() || !addOperations() || !addOutputs()) {
-        resetModel();
+        clearModel();
         return false;
     }
 
