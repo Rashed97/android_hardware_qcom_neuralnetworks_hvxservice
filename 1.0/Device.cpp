@@ -37,7 +37,7 @@ Device::~Device() {}
 
 static std::once_flag configure_nnlib;
 static void configureHexagon() {
-    std::call_once(configure_nnlib, [](){ hexagon::Controller::getInstance().config(); });
+    std::call_once(configure_nnlib, [](){ hexagon::Controller::getInstance().config(); hexagon::Controller::getInstance().boost(100); });
 }
 
 Return<void> Device::getCapabilities(getCapabilities_cb _hidl_cb) {

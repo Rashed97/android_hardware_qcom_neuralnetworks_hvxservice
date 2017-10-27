@@ -44,7 +44,9 @@
     MACRO(op_id_to_name)           \
     MACRO(disable_dcvs)            \
     MACRO(set_powersave_level)     \
-    MACRO(config)
+    MACRO(config)                  \
+    MACRO(boost)                   \
+    MACRO(slow)
 
 #define CONTROLLER_CHECK(function, ...)    \
     int err = mFn_##function(__VA_ARGS__); \
@@ -341,6 +343,26 @@ int Controller::config() {
     }
 
     CONTROLLER_CHECK(config);
+
+    return 0;
+}
+
+int Controller::boost(int bus_usage) {
+    if (mFn_boost == nullptr) {
+        return -1;
+    }
+
+    CONTROLLER_CHECK(boost, bus_usage);
+
+    return 0;
+}
+
+int Controller::slow() {
+    if (mFn_slow == nullptr) {
+        return -1;
+    }
+
+    CONTROLLER_CHECK(slow);
 
     return 0;
 }

@@ -640,6 +640,8 @@ bool Model::execute(const Request& request) {
 
     std::for_each(pools.begin(), pools.end(), [](RunTimePoolInfo& pool) { pool.update(); });
 
+    LOG(INFO) << "EXECUTION WAS " << (err == 0 ? "SUCCESSFUL" : "UNSUCCESSFUL");
+
     return err == 0;
 }
 
