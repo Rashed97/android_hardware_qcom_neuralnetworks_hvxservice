@@ -18,6 +18,7 @@
 
 #include "HexagonUtils.h"
 #include "PreparedModel.h"
+#include "ValidateHal.h"
 #include <android-base/logging.h>
 #include <thread>
 
