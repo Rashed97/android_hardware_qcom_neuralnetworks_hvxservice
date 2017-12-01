@@ -117,10 +117,13 @@ std::vector<uint32_t> getAlignedDimensions(const std::vector<uint32_t>& dims, ui
 }
 
 std::vector<RunTimePoolInfo> mapPools(const hidl_vec<hidl_memory>& pools) {
-    std::vector<RunTimePoolInfo> poolInfos(pools.size());
-    for (size_t i = 0; i < pools.size(); i++) {
-        HEXAGON_SOFT_ASSERT(poolInfos[i].set(pools[i]), "Error setting pool " << i);
+    std::vector<RunTimePoolInfo> poolInfos;
+    poolInfos.reserve(pools.size());
+    bool fail = false;
+    for (const auto& pool : pools) {
+        poolInfos.emplace_back(pool, &fail);
     }
+    HEXAGON_SOFT_ASSERT(!fail, "Error setting pools");
     return poolInfos;
 }
 
@@ -144,7 +147,7 @@ const uint8_t* getDataFromPool(const RunTimePoolInfo& pool, uint32_t offset,
                                [[maybe_unused]] uint32_t length) {
     //HEXAGON_SOFT_ASSERT_LE(offset + length, pool->getSize(),
     //                       "Error: trying to copy data from outside of pool bounds");
-    return pool.buffer + offset;
+    return pool.getBuffer() + offset;
 }
 } // anonymous namespace
 
