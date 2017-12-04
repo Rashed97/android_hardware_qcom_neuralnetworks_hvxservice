@@ -16,12 +16,12 @@
 
 #define LOG_TAG "android.hardware.neuralnetworks@1.0-impl-hvx"
 
-#include "OperationsUtils.h"
 #include "HexagonUtils.h"
-#include <algorithm>
 #include <hidlmemory/mapping.h>
+#include <algorithm>
 #include <numeric>
 #include <vector>
+#include "OperationsUtils.h"
 
 namespace android {
 namespace hardware {
@@ -53,11 +53,10 @@ hexagon_nn_padding_type getPadding(uint32_t pad) {
     };
 }
 
-hexagon_nn_padding_type getPadding(int32_t inWidth, int32_t inHeight,
-                                   int32_t strideWidth, int32_t strideHeight,
-                                   int32_t filterWidth, int32_t filterHeight,
-                                   int32_t paddingLeft, int32_t paddingRight,
-                                   int32_t paddingTop, int32_t paddingBottom) {
+hexagon_nn_padding_type getPadding(int32_t inWidth, int32_t inHeight, int32_t strideWidth,
+                                   int32_t strideHeight, int32_t filterWidth, int32_t filterHeight,
+                                   int32_t paddingLeft, int32_t paddingRight, int32_t paddingTop,
+                                   int32_t paddingBottom) {
     return getPadding(::android::nn::getPaddingScheme(inWidth, inHeight, strideWidth, strideHeight,
                                                       filterWidth, filterHeight, paddingLeft,
                                                       paddingRight, paddingTop, paddingBottom));
@@ -95,12 +94,12 @@ op_type getQuantizedActivationFunction(FusedActivationFunc act) {
 
 uint32_t getSize(OperandType type) {
     static const uint32_t sizes[] = {
-        4, // FLOAT32
-        4, // INT32
-        4, // UINT32
-        4, // TENSOR_FLOAT32
-        4, // TENSOR_INT32
-        1, // TENSOR_SYMMETRICAL_QUANT8
+        4,  // FLOAT32
+        4,  // INT32
+        4,  // UINT32
+        4,  // TENSOR_FLOAT32
+        4,  // TENSOR_INT32
+        1,  // TENSOR_SYMMETRICAL_QUANT8
     };
     HEXAGON_SOFT_ASSERT(static_cast<uint32_t>(type) < sizeof(sizes) / sizeof(*sizes),
                         "Error: type exceeds max enum value");
@@ -108,9 +107,9 @@ uint32_t getSize(OperandType type) {
 }
 
 std::vector<uint32_t> getAlignedDimensions(const std::vector<uint32_t>& dims, uint32_t N) {
-    HEXAGON_SOFT_ASSERT_GE(N, dims.size(),
-                           "Error: constant data dimensions " << dims.size() <<
-                           " exceeds alignment of " << N);
+    HEXAGON_SOFT_ASSERT_GE(
+        N, dims.size(),
+        "Error: constant data dimensions " << dims.size() << " exceeds alignment of " << N);
     std::vector<uint32_t> dimensions(N - dims.size(), 1);
     dimensions.insert(dimensions.end(), dims.begin(), dims.end());
     return dimensions;
@@ -126,7 +125,6 @@ std::vector<RunTimePoolInfo> mapPools(const hidl_vec<hidl_memory>& pools) {
     HEXAGON_SOFT_ASSERT(!fail, "Error setting pools");
     return poolInfos;
 }
-
 
 std::unordered_set<uint32_t> getPoolIndexes(const std::vector<RequestArgument>& inputsOutputs) {
     std::unordered_set<uint32_t> indexes;
@@ -145,21 +143,21 @@ const uint8_t* getDataFromBlock(const hidl_vec<uint8_t>& block, uint32_t offset,
 
 const uint8_t* getDataFromPool(const RunTimePoolInfo& pool, uint32_t offset,
                                [[maybe_unused]] uint32_t length) {
-    //HEXAGON_SOFT_ASSERT_LE(offset + length, pool->getSize(),
+    // HEXAGON_SOFT_ASSERT_LE(offset + length, pool->getSize(),
     //                       "Error: trying to copy data from outside of pool bounds");
     return pool.getBuffer() + offset;
 }
-} // anonymous namespace
+}  // anonymous namespace
 
 const uint8_t* getData(const Operand& operand, const hidl_vec<uint8_t>& block,
                        const std::vector<RunTimePoolInfo>& pools) {
-    switch(operand.lifetime) {
+    switch (operand.lifetime) {
         case OperandLifeTime::TEMPORARY_VARIABLE:
             return nullptr;
         case OperandLifeTime::MODEL_INPUT:
         case OperandLifeTime::MODEL_OUTPUT:
             HEXAGON_SOFT_ASSERT(false,
-                   "Error: trying to retrieve data that is only known at runtime");
+                                "Error: trying to retrieve data that is only known at runtime");
         case OperandLifeTime::CONSTANT_COPY:
             return getDataFromBlock(block, operand.location.offset, operand.location.length);
         case OperandLifeTime::CONSTANT_REFERENCE:
@@ -180,11 +178,11 @@ bool operator!=(const hexagon_nn_input& lhs, const hexagon_nn_input& rhs) {
 
 bool operator==(const hexagon_nn_output& lhs, const hexagon_nn_output& rhs) {
     return lhs.rank == rhs.rank && lhs.max_sizes[0] == rhs.max_sizes[0] &&
-            lhs.max_sizes[1] == rhs.max_sizes[1] && lhs.max_sizes[2] == rhs.max_sizes[2] &&
-            lhs.max_sizes[3] == rhs.max_sizes[3] && lhs.max_sizes[4] == rhs.max_sizes[4] &&
-            lhs.max_sizes[5] == rhs.max_sizes[5] && lhs.max_sizes[6] == rhs.max_sizes[6] &&
-            lhs.max_sizes[7] == rhs.max_sizes[7] && lhs.elementsize == rhs.elementsize &&
-            lhs.zero_offset == rhs.zero_offset && lhs.stepsize == rhs.stepsize;
+           lhs.max_sizes[1] == rhs.max_sizes[1] && lhs.max_sizes[2] == rhs.max_sizes[2] &&
+           lhs.max_sizes[3] == rhs.max_sizes[3] && lhs.max_sizes[4] == rhs.max_sizes[4] &&
+           lhs.max_sizes[5] == rhs.max_sizes[5] && lhs.max_sizes[6] == rhs.max_sizes[6] &&
+           lhs.max_sizes[7] == rhs.max_sizes[7] && lhs.elementsize == rhs.elementsize &&
+           lhs.zero_offset == rhs.zero_offset && lhs.stepsize == rhs.stepsize;
 }
 
 bool operator!=(const hexagon_nn_output& lhs, const hexagon_nn_output& rhs) {
@@ -221,12 +219,13 @@ std::string toString(hexagon_nn_nn_id id) {
 
 std::string toString(op_type op) {
     static const char* opText[] = {
-        #define DEF_OP(NAME,...) "OP_"#NAME,
-        #include "hexagon_nn_controller/ops.def"
-        #undef DEF_OP
+#define DEF_OP(NAME, ...) "OP_" #NAME,
+#include "hexagon_nn_controller/ops.def"
+#undef DEF_OP
     };
-    return static_cast<size_t>(op) < sizeof(opText) / sizeof(char*) ?
-            opText[static_cast<size_t>(op)] : "<invalid op_type>";
+    return static_cast<size_t>(op) < sizeof(opText) / sizeof(char*)
+               ? opText[static_cast<size_t>(op)]
+               : "<invalid op_type>";
 }
 
 std::string toString(hexagon_nn_padding_type padding) {
@@ -238,58 +237,55 @@ std::string toString(hexagon_nn_padding_type padding) {
         "NN_PAD_MIRROR_SYMMETRIC",
         "NN_PAD_SAME_CAFFE",
     };
-    return static_cast<size_t>(padding) < sizeof(paddingText) / sizeof(char*) ?
-            paddingText[static_cast<size_t>(padding)] : "<invalid hexagon_nn_padding_type>";
+    return static_cast<size_t>(padding) < sizeof(paddingText) / sizeof(char*)
+               ? paddingText[static_cast<size_t>(padding)]
+               : "<invalid hexagon_nn_padding_type>";
 }
 
 std::string toString(const hexagon_nn_input& input) {
     return "hexagon_nn_input{.src_id: " + std::to_string(input.src_id) +
-            ", .output_idx: " + std::to_string(input.output_idx) + "}";
+           ", .output_idx: " + std::to_string(input.output_idx) + "}";
 }
 
 std::string toString(const hexagon_nn_output& output) {
-    return "hexagon_nn_output{.rank: " + std::to_string(output.rank) +
-            ", .max_sizes: [" + std::to_string(output.max_sizes[0]) +
-                ", " + std::to_string(output.max_sizes[1]) +
-                ", " + std::to_string(output.max_sizes[2]) +
-                ", " + std::to_string(output.max_sizes[3]) +
-                ", " + std::to_string(output.max_sizes[4]) +
-                ", " + std::to_string(output.max_sizes[5]) +
-                ", " + std::to_string(output.max_sizes[6]) +
-                ", " + std::to_string(output.max_sizes[7]) + "]" +
-            ", .elementsize: " + std::to_string(output.elementsize) +
-            ", .zero_offset: " + std::to_string(output.zero_offset) +
-            ", .stepsize: " + std::to_string(output.stepsize) + "}";
+    return "hexagon_nn_output{.rank: " + std::to_string(output.rank) + ", .max_sizes: [" +
+           std::to_string(output.max_sizes[0]) + ", " + std::to_string(output.max_sizes[1]) + ", " +
+           std::to_string(output.max_sizes[2]) + ", " + std::to_string(output.max_sizes[3]) + ", " +
+           std::to_string(output.max_sizes[4]) + ", " + std::to_string(output.max_sizes[5]) + ", " +
+           std::to_string(output.max_sizes[6]) + ", " + std::to_string(output.max_sizes[7]) + "]" +
+           ", .elementsize: " + std::to_string(output.elementsize) +
+           ", .zero_offset: " + std::to_string(output.zero_offset) +
+           ", .stepsize: " + std::to_string(output.stepsize) + "}";
 }
 
 std::string toString(const hexagon_nn_tensordef& tensordef) {
     return "hexagon_nn_tensordef{.batches: " + std::to_string(tensordef.batches) +
-            ", .height: " + std::to_string(tensordef.height) +
-            ", .width: " + std::to_string(tensordef.width) +
-            ", .depth: " + std::to_string(tensordef.depth) +
-            ", .data: " + std::to_string(reinterpret_cast<uintptr_t>(tensordef.data)) +
-            ", .dataLen: " + std::to_string(tensordef.dataLen) +
-            ", .data_valid_len: " + std::to_string(tensordef.data_valid_len) +
-            ", .unused: " + std::to_string(tensordef.unused) + "}";
+           ", .height: " + std::to_string(tensordef.height) +
+           ", .width: " + std::to_string(tensordef.width) +
+           ", .depth: " + std::to_string(tensordef.depth) +
+           ", .data: " + std::to_string(reinterpret_cast<uintptr_t>(tensordef.data)) +
+           ", .dataLen: " + std::to_string(tensordef.dataLen) +
+           ", .data_valid_len: " + std::to_string(tensordef.data_valid_len) +
+           ", .unused: " + std::to_string(tensordef.unused) + "}";
 }
 
 std::string toString(const hexagon_nn_perfinfo& perfinfo) {
     return "hexagon_nn_perfinfo{.node_id: " + std::to_string(perfinfo.node_id) +
-            ", .executions: " + std::to_string(perfinfo.executions) +
-            ", .counter_lo: " + std::to_string(perfinfo.counter_lo) +
-            ", .counter_hi: " + std::to_string(perfinfo.counter_hi) + "}";
+           ", .executions: " + std::to_string(perfinfo.executions) +
+           ", .counter_lo: " + std::to_string(perfinfo.counter_lo) +
+           ", .counter_hi: " + std::to_string(perfinfo.counter_hi) + "}";
 }
 
 std::string toString(const ::android::nn::Shape& shape) {
     return "Shape{.type: " + toString(shape.type) +
-            ", .dimensions: " + toString(shape.dimensions.data(), shape.dimensions.size()) +
-            ", .scale: " + std::to_string(shape.scale) +
-            ", .zeroPoint: " + std::to_string(shape.offset) + "}";
+           ", .dimensions: " + toString(shape.dimensions.data(), shape.dimensions.size()) +
+           ", .scale: " + std::to_string(shape.scale) +
+           ", .zeroPoint: " + std::to_string(shape.offset) + "}";
 }
 
-} // namespace hexagon
-} // namespace implementation
-} // namespace V1_0
-} // namespace neuralnetworks
-} // namespace hardware
-} // namespace android
+}  // namespace hexagon
+}  // namespace implementation
+}  // namespace V1_0
+}  // namespace neuralnetworks
+}  // namespace hardware
+}  // namespace android

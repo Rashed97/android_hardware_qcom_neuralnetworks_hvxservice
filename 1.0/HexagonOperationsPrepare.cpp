@@ -32,8 +32,7 @@ using android::nn::Shape;
 namespace {
 namespace float32 {
 
-bool add(const std::vector<uint32_t>& ins, const std::vector<uint32_t>& outs,
-         HexagonModel* model) {
+bool add(const std::vector<uint32_t>& ins, const std::vector<uint32_t>& outs, HexagonModel* model) {
     HEXAGON_SOFT_ASSERT_EQ(3, ins.size(), "Need 3 inputs for float32::add");
     HEXAGON_SOFT_ASSERT_EQ(1, outs.size(), "Need 1 output for float32::add");
 
@@ -41,7 +40,7 @@ bool add(const std::vector<uint32_t>& ins, const std::vector<uint32_t>& outs,
     const hexagon_nn_input& in1 = model->getTensor(ins[0]);
     const hexagon_nn_input& in2 = model->getTensor(ins[1]);
 
-    const op_type act           = model->getFloatActivation(ins[2]);
+    const op_type act = model->getFloatActivation(ins[2]);
 
     // add node to graph
     return model->addFusedFloatOperation(OP_Add_f, NN_PAD_NA, {}, act, {in1, in2}, outs);
@@ -66,37 +65,36 @@ bool average_pool_2d(const std::vector<uint32_t>& ins, const std::vector<uint32_
 
     // get parameters
     if (ins.size() == 10) {
-        const int32_t padding_left   = model->getScalar<int32_t>(ins[1]);
-        const int32_t padding_right  = model->getScalar<int32_t>(ins[2]);
-        const int32_t padding_top    = model->getScalar<int32_t>(ins[3]);
+        const int32_t padding_left = model->getScalar<int32_t>(ins[1]);
+        const int32_t padding_right = model->getScalar<int32_t>(ins[2]);
+        const int32_t padding_top = model->getScalar<int32_t>(ins[3]);
         const int32_t padding_bottom = model->getScalar<int32_t>(ins[4]);
-        stride_width                 = model->getScalar<int32_t>(ins[5]);
-        stride_height                = model->getScalar<int32_t>(ins[6]);
-        filter_width                 = model->getScalar<int32_t>(ins[7]);
-        filter_height                = model->getScalar<int32_t>(ins[8]);
-        act                          = model->getFloatActivation(ins[9]);
+        stride_width = model->getScalar<int32_t>(ins[5]);
+        stride_height = model->getScalar<int32_t>(ins[6]);
+        filter_width = model->getScalar<int32_t>(ins[7]);
+        filter_height = model->getScalar<int32_t>(ins[8]);
+        act = model->getFloatActivation(ins[9]);
 
         const Shape inputShape = model->getShape(ins[0]);
-        pad = getPadding(inputShape.dimensions[2], inputShape.dimensions[1],
-                         stride_width, stride_height, filter_width, filter_height,
-                         padding_left, padding_right, padding_top, padding_bottom);
+        pad = getPadding(inputShape.dimensions[2], inputShape.dimensions[1], stride_width,
+                         stride_height, filter_width, filter_height, padding_left, padding_right,
+                         padding_top, padding_bottom);
         HEXAGON_SOFT_ASSERT_NE(pad, NN_PAD_NA, "Unknown padding");
-    }
-    else {
-        pad           = model->getPadding(ins[1]);
-        stride_width  = model->getScalar<int32_t>(ins[2]);
+    } else {
+        pad = model->getPadding(ins[1]);
+        stride_width = model->getScalar<int32_t>(ins[2]);
         stride_height = model->getScalar<int32_t>(ins[3]);
-        filter_width  = model->getScalar<int32_t>(ins[4]);
+        filter_width = model->getScalar<int32_t>(ins[4]);
         filter_height = model->getScalar<int32_t>(ins[5]);
-        act           = model->getFloatActivation(ins[6]);
+        act = model->getFloatActivation(ins[6]);
     }
 
     const hexagon_nn_input window = model->createShape(1, filter_height, filter_width, 1);
     const hexagon_nn_input stride = model->createShape(1, stride_height, stride_width, 1);
 
     // add node to graph
-    return model->addFloatOperationWithActivation(OP_AvgPool_f, pad, act,
-                                                  {input, window, stride}, outs);
+    return model->addFloatOperationWithActivation(OP_AvgPool_f, pad, act, {input, window, stride},
+                                                  outs);
 }
 
 bool concatenation(const std::vector<uint32_t>& ins, const std::vector<uint32_t>& outs,
@@ -109,7 +107,7 @@ bool concatenation(const std::vector<uint32_t>& ins, const std::vector<uint32_t>
     // get parameters
     std::vector<hexagon_nn_input> inputs(numInputTensors + 1);
     for (size_t i = 0; i < numInputTensors; ++i) {
-        inputs[i+1] = model->getTensor(ins[i]);
+        inputs[i + 1] = model->getTensor(ins[i]);
     }
 
     // axis being concatenated
@@ -128,9 +126,9 @@ bool conv_2d(const std::vector<uint32_t>& ins, const std::vector<uint32_t>& outs
     HEXAGON_SOFT_ASSERT_EQ(1, outs.size(), "Need 1 output for float32::conv_2d");
 
     // get parameters
-    const hexagon_nn_input& input  = model->getTensor(ins[0]);
-    const hexagon_nn_input  filter = model->createConvFilterTensor(ins[1]);
-    const hexagon_nn_input& bias   = model->getTensor(ins[2]);
+    const hexagon_nn_input& input = model->getTensor(ins[0]);
+    const hexagon_nn_input filter = model->createConvFilterTensor(ins[1]);
+    const hexagon_nn_input& bias = model->getTensor(ins[2]);
 
     // setup parameters
     hexagon_nn_padding_type pad;
@@ -140,34 +138,32 @@ bool conv_2d(const std::vector<uint32_t>& ins, const std::vector<uint32_t>& outs
 
     // get parameters
     if (ins.size() == 10) {
-        const int32_t padding_left   = model->getScalar<int32_t>(ins[3]);
-        const int32_t padding_right  = model->getScalar<int32_t>(ins[4]);
-        const int32_t padding_top    = model->getScalar<int32_t>(ins[5]);
+        const int32_t padding_left = model->getScalar<int32_t>(ins[3]);
+        const int32_t padding_right = model->getScalar<int32_t>(ins[4]);
+        const int32_t padding_top = model->getScalar<int32_t>(ins[5]);
         const int32_t padding_bottom = model->getScalar<int32_t>(ins[6]);
-        stride_width                 = model->getScalar<int32_t>(ins[7]);
-        stride_height                = model->getScalar<int32_t>(ins[8]);
-        act                          = model->getFloatActivation(ins[9]);
+        stride_width = model->getScalar<int32_t>(ins[7]);
+        stride_height = model->getScalar<int32_t>(ins[8]);
+        act = model->getFloatActivation(ins[9]);
 
         const Shape inputShape = model->getShape(ins[0]);
         const Shape filterShape = model->getShape(ins[1]);
-        pad = getPadding(inputShape.dimensions[2], inputShape.dimensions[1],
-                         stride_width, stride_height, filterShape.dimensions[2],
-                         filterShape.dimensions[1], padding_left, padding_right,
-                         padding_top, padding_bottom);
+        pad = getPadding(inputShape.dimensions[2], inputShape.dimensions[1], stride_width,
+                         stride_height, filterShape.dimensions[2], filterShape.dimensions[1],
+                         padding_left, padding_right, padding_top, padding_bottom);
         HEXAGON_SOFT_ASSERT_NE(pad, NN_PAD_NA, "Unknown padding");
-    }
-    else {
-        pad           = model->getPadding(ins[3]);
-        stride_width  = model->getScalar<int32_t>(ins[4]);
+    } else {
+        pad = model->getPadding(ins[3]);
+        stride_width = model->getScalar<int32_t>(ins[4]);
         stride_height = model->getScalar<int32_t>(ins[5]);
-        act           = model->getFloatActivation(ins[6]);
+        act = model->getFloatActivation(ins[6]);
     }
 
     const hexagon_nn_input stride = model->createShape(1, stride_height, stride_width, 1);
 
     // add node to graph
-    return model->addFusedFloatOperation(OP_Conv2d_f, pad, bias, act,
-                                         {input, filter, stride}, outs);
+    return model->addFusedFloatOperation(OP_Conv2d_f, pad, bias, act, {input, filter, stride},
+                                         outs);
 }
 
 bool depthwise_conv_2d(const std::vector<uint32_t>& ins, const std::vector<uint32_t>& outs,
@@ -178,7 +174,7 @@ bool depthwise_conv_2d(const std::vector<uint32_t>& ins, const std::vector<uint3
 
     // get parameters
     const hexagon_nn_input& input = model->getTensor(ins[0]);
-    const hexagon_nn_input& bias  = model->getTensor(ins[2]);
+    const hexagon_nn_input& bias = model->getTensor(ins[2]);
 
     const Shape filterShape = model->getShape(ins[1]);
 
@@ -191,29 +187,27 @@ bool depthwise_conv_2d(const std::vector<uint32_t>& ins, const std::vector<uint3
 
     // get parameters
     if (ins.size() == 11) {
-        const int32_t padding_left   = model->getScalar<int32_t>(ins[3]);
-        const int32_t padding_right  = model->getScalar<int32_t>(ins[4]);
-        const int32_t padding_top    = model->getScalar<int32_t>(ins[5]);
+        const int32_t padding_left = model->getScalar<int32_t>(ins[3]);
+        const int32_t padding_right = model->getScalar<int32_t>(ins[4]);
+        const int32_t padding_top = model->getScalar<int32_t>(ins[5]);
         const int32_t padding_bottom = model->getScalar<int32_t>(ins[6]);
-        stride_width                 = model->getScalar<int32_t>(ins[7]);
-        stride_height                = model->getScalar<int32_t>(ins[8]);
-        depth_multiplier             = model->getScalar<int32_t>(ins[9]);
-        act                          = model->getFloatActivation(ins[10]);
+        stride_width = model->getScalar<int32_t>(ins[7]);
+        stride_height = model->getScalar<int32_t>(ins[8]);
+        depth_multiplier = model->getScalar<int32_t>(ins[9]);
+        act = model->getFloatActivation(ins[10]);
 
         const Shape inputShape = model->getShape(ins[0]);
         const Shape filterShape = model->getShape(ins[1]);
-        pad = getPadding(inputShape.dimensions[2], inputShape.dimensions[1],
-                         stride_width, stride_height, filterShape.dimensions[2],
-                         filterShape.dimensions[1], padding_left, padding_right,
-                         padding_top, padding_bottom);
+        pad = getPadding(inputShape.dimensions[2], inputShape.dimensions[1], stride_width,
+                         stride_height, filterShape.dimensions[2], filterShape.dimensions[1],
+                         padding_left, padding_right, padding_top, padding_bottom);
         HEXAGON_SOFT_ASSERT_NE(pad, NN_PAD_NA, "Unknown padding");
-    }
-    else {
-        pad              = model->getPadding(ins[3]);
-        stride_width     = model->getScalar<int32_t>(ins[4]);
-        stride_height    = model->getScalar<int32_t>(ins[5]);
+    } else {
+        pad = model->getPadding(ins[3]);
+        stride_width = model->getScalar<int32_t>(ins[4]);
+        stride_height = model->getScalar<int32_t>(ins[5]);
         depth_multiplier = model->getScalar<int32_t>(ins[6]);
-        act              = model->getFloatActivation(ins[7]);
+        act = model->getFloatActivation(ins[7]);
     }
 
     const hexagon_nn_input filter = model->createDepthwiseFilterTensor(ins[1], depth_multiplier);
@@ -230,15 +224,14 @@ bool fully_connected(const std::vector<uint32_t>& ins, const std::vector<uint32_
     HEXAGON_SOFT_ASSERT_EQ(1, outs.size(), "Need 1 output for float32::fully_connected");
 
     // get parameters
-    const hexagon_nn_input& input   = model->getTensor(ins[0]);
+    const hexagon_nn_input& input = model->getTensor(ins[0]);
     const hexagon_nn_input& weights = model->createFullyConnectedWeightTensor(ins[1]);
-    const hexagon_nn_input& bias    = model->getTensor(ins[2]);
+    const hexagon_nn_input& bias = model->getTensor(ins[2]);
 
-    const op_type act               = model->getFloatActivation(ins[3]);
+    const op_type act = model->getFloatActivation(ins[3]);
 
     // add node to graph
-    return model->addFusedFloatOperation(OP_MatMul_f, NN_PAD_NA, bias, act,
-                                         {input, weights}, outs);
+    return model->addFusedFloatOperation(OP_MatMul_f, NN_PAD_NA, bias, act, {input, weights}, outs);
 }
 
 bool l2_pool_2d(const std::vector<uint32_t>& ins, const std::vector<uint32_t>& outs,
@@ -260,42 +253,40 @@ bool l2_pool_2d(const std::vector<uint32_t>& ins, const std::vector<uint32_t>& o
 
     // get parameters
     if (ins.size() == 10) {
-        const int32_t padding_left   = model->getScalar<int32_t>(ins[1]);
-        const int32_t padding_right  = model->getScalar<int32_t>(ins[2]);
-        const int32_t padding_top    = model->getScalar<int32_t>(ins[3]);
+        const int32_t padding_left = model->getScalar<int32_t>(ins[1]);
+        const int32_t padding_right = model->getScalar<int32_t>(ins[2]);
+        const int32_t padding_top = model->getScalar<int32_t>(ins[3]);
         const int32_t padding_bottom = model->getScalar<int32_t>(ins[4]);
-        stride_width                 = model->getScalar<int32_t>(ins[5]);
-        stride_height                = model->getScalar<int32_t>(ins[6]);
-        filter_width                 = model->getScalar<int32_t>(ins[7]);
-        filter_height                = model->getScalar<int32_t>(ins[8]);
-        act                          = model->getFloatActivation(ins[9]);
+        stride_width = model->getScalar<int32_t>(ins[5]);
+        stride_height = model->getScalar<int32_t>(ins[6]);
+        filter_width = model->getScalar<int32_t>(ins[7]);
+        filter_height = model->getScalar<int32_t>(ins[8]);
+        act = model->getFloatActivation(ins[9]);
 
         const Shape inputShape = model->getShape(ins[0]);
-        pad = getPadding(inputShape.dimensions[2], inputShape.dimensions[1],
-                         stride_width, stride_height, filter_width, filter_height,
-                         padding_left, padding_right, padding_top, padding_bottom);
+        pad = getPadding(inputShape.dimensions[2], inputShape.dimensions[1], stride_width,
+                         stride_height, filter_width, filter_height, padding_left, padding_right,
+                         padding_top, padding_bottom);
         HEXAGON_SOFT_ASSERT_NE(pad, NN_PAD_NA, "Unknown padding");
-    }
-    else {
-        pad           = model->getPadding(ins[1]);
-        stride_width  = model->getScalar<int32_t>(ins[2]);
+    } else {
+        pad = model->getPadding(ins[1]);
+        stride_width = model->getScalar<int32_t>(ins[2]);
         stride_height = model->getScalar<int32_t>(ins[3]);
-        filter_width  = model->getScalar<int32_t>(ins[4]);
+        filter_width = model->getScalar<int32_t>(ins[4]);
         filter_height = model->getScalar<int32_t>(ins[5]);
-        act           = model->getFloatActivation(ins[6]);
+        act = model->getFloatActivation(ins[6]);
     }
 
     const hexagon_nn_input window = model->createShape(1, filter_height, filter_width, 1);
     const hexagon_nn_input stride = model->createShape(1, stride_height, stride_width, 1);
 
     // add node to graph
-    return model->addFloatOperationWithActivation(OP_L2Pool_f, pad, act,
-                                                  {input, window, stride}, outs);
+    return model->addFloatOperationWithActivation(OP_L2Pool_f, pad, act, {input, window, stride},
+                                                  outs);
 }
 
 bool local_response_normalization(const std::vector<uint32_t>& ins,
-                                  const std::vector<uint32_t>& outs,
-                                  HexagonModel* model) {
+                                  const std::vector<uint32_t>& outs, HexagonModel* model) {
     HEXAGON_SOFT_ASSERT_EQ(5, ins.size(),
                            "Need 5 inputs for float32::local_response_normalization");
     HEXAGON_SOFT_ASSERT_EQ(1, outs.size(),
@@ -303,12 +294,12 @@ bool local_response_normalization(const std::vector<uint32_t>& ins,
 
     // get parameters
     const hexagon_nn_input& input = model->getTensor(ins[0]);
-    const hexagon_nn_input& bias  = model->getTensor(ins[2]);
+    const hexagon_nn_input& bias = model->getTensor(ins[2]);
     const hexagon_nn_input& alpha = model->getTensor(ins[3]);
-    const hexagon_nn_input& beta  = model->getTensor(ins[4]);
+    const hexagon_nn_input& beta = model->getTensor(ins[4]);
 
     // create value that's [1, 1, 1, radius] with value of 1.0f
-    const int32_t radius          = model->getScalar<int32_t>(ins[1]);
+    const int32_t radius = model->getScalar<int32_t>(ins[1]);
     const hexagon_nn_input window = model->createTensor<float>(1, 1, 1, radius * 2 + 1, {1.0f});
 
     // add node to graph
@@ -346,41 +337,39 @@ bool max_pool_2d(const std::vector<uint32_t>& ins, const std::vector<uint32_t>& 
 
     // get parameters
     if (ins.size() == 10) {
-        const int32_t padding_left   = model->getScalar<int32_t>(ins[1]);
-        const int32_t padding_right  = model->getScalar<int32_t>(ins[2]);
-        const int32_t padding_top    = model->getScalar<int32_t>(ins[3]);
+        const int32_t padding_left = model->getScalar<int32_t>(ins[1]);
+        const int32_t padding_right = model->getScalar<int32_t>(ins[2]);
+        const int32_t padding_top = model->getScalar<int32_t>(ins[3]);
         const int32_t padding_bottom = model->getScalar<int32_t>(ins[4]);
-        stride_width                 = model->getScalar<int32_t>(ins[5]);
-        stride_height                = model->getScalar<int32_t>(ins[6]);
-        filter_width                 = model->getScalar<int32_t>(ins[7]);
-        filter_height                = model->getScalar<int32_t>(ins[8]);
-        act                          = model->getFloatActivation(ins[9]);
+        stride_width = model->getScalar<int32_t>(ins[5]);
+        stride_height = model->getScalar<int32_t>(ins[6]);
+        filter_width = model->getScalar<int32_t>(ins[7]);
+        filter_height = model->getScalar<int32_t>(ins[8]);
+        act = model->getFloatActivation(ins[9]);
 
         const Shape inputShape = model->getShape(ins[0]);
-        pad = getPadding(inputShape.dimensions[2], inputShape.dimensions[1],
-                         stride_width, stride_height, filter_width, filter_height,
-                         padding_left, padding_right, padding_top, padding_bottom);
+        pad = getPadding(inputShape.dimensions[2], inputShape.dimensions[1], stride_width,
+                         stride_height, filter_width, filter_height, padding_left, padding_right,
+                         padding_top, padding_bottom);
         HEXAGON_SOFT_ASSERT_NE(pad, NN_PAD_NA, "Unknown padding");
-    }
-    else {
-        pad           = model->getPadding(ins[1]);
-        stride_width  = model->getScalar<int32_t>(ins[2]);
+    } else {
+        pad = model->getPadding(ins[1]);
+        stride_width = model->getScalar<int32_t>(ins[2]);
         stride_height = model->getScalar<int32_t>(ins[3]);
-        filter_width  = model->getScalar<int32_t>(ins[4]);
+        filter_width = model->getScalar<int32_t>(ins[4]);
         filter_height = model->getScalar<int32_t>(ins[5]);
-        act           = model->getFloatActivation(ins[6]);
+        act = model->getFloatActivation(ins[6]);
     }
 
     const hexagon_nn_input window = model->createShape(1, filter_height, filter_width, 1);
     const hexagon_nn_input stride = model->createShape(1, stride_height, stride_width, 1);
 
     // add node to graph
-    return model->addFloatOperationWithActivation(OP_MaxPool_f, pad, act,
-                                                  {input, window, stride}, outs);
+    return model->addFloatOperationWithActivation(OP_MaxPool_f, pad, act, {input, window, stride},
+                                                  outs);
 }
 
-bool mul(const std::vector<uint32_t>& ins, const std::vector<uint32_t>& outs,
-         HexagonModel* model) {
+bool mul(const std::vector<uint32_t>& ins, const std::vector<uint32_t>& outs, HexagonModel* model) {
     HEXAGON_SOFT_ASSERT_EQ(3, ins.size(), "Need 3 inputs for float32::mul");
     HEXAGON_SOFT_ASSERT_EQ(1, outs.size(), "Need 1 output for float32::mul");
 
@@ -388,11 +377,10 @@ bool mul(const std::vector<uint32_t>& ins, const std::vector<uint32_t>& outs,
     const hexagon_nn_input& in1 = model->getTensor(ins[0]);
     const hexagon_nn_input& in2 = model->getTensor(ins[1]);
 
-    const op_type act           = model->getFloatActivation(ins[2]);
+    const op_type act = model->getFloatActivation(ins[2]);
 
     // add node to graph
-    return model->addFusedFloatOperation(OP_Mul_f, NN_PAD_NA, {}, act,
-                                         {in1, in2}, outs);
+    return model->addFusedFloatOperation(OP_Mul_f, NN_PAD_NA, {}, act, {in1, in2}, outs);
 }
 
 bool relu(const std::vector<uint32_t>& ins, const std::vector<uint32_t>& outs,
@@ -414,8 +402,8 @@ bool relu1(const std::vector<uint32_t>& ins, const std::vector<uint32_t>& outs,
 
     // get parameters
     const hexagon_nn_input& input = model->getTensor(ins[0]);
-    const hexagon_nn_input  min   = model->createScalar(-1.0f);
-    const hexagon_nn_input  max   = model->createScalar(1.0f);
+    const hexagon_nn_input min = model->createScalar(-1.0f);
+    const hexagon_nn_input max = model->createScalar(1.0f);
 
     // add node to graph
     return model->addBasicOperation(OP_Clamp_f, NN_PAD_NA, {input, min, max}, outs);
@@ -428,7 +416,7 @@ bool relu6(const std::vector<uint32_t>& ins, const std::vector<uint32_t>& outs,
 
     // get parameters
     const hexagon_nn_input& input = model->getTensor(ins[0]);
-    const hexagon_nn_input  max   = model->createScalar(6.0f);
+    const hexagon_nn_input max = model->createScalar(6.0f);
 
     // add node to graph
     return model->addBasicOperation(OP_ReluX_f, NN_PAD_NA, {input, max}, outs);
@@ -440,7 +428,7 @@ bool reshape(const std::vector<uint32_t>& ins, const std::vector<uint32_t>& outs
     HEXAGON_SOFT_ASSERT_EQ(1, outs.size(), "Need 1 output for float32::reshape");
 
     // get parameters
-    const hexagon_nn_input& input   = model->getTensor(ins[0]);
+    const hexagon_nn_input& input = model->getTensor(ins[0]);
     const hexagon_nn_input& newdims = model->getTensor(ins[1]);
 
     // add node to graph
@@ -455,8 +443,8 @@ bool resize_bilinear(const std::vector<uint32_t>& ins, const std::vector<uint32_
     // get parameters
     const hexagon_nn_input& input = model->getTensor(ins[0]);
 
-    const int32_t width           = model->getScalar<int32_t>(ins[1]);
-    const int32_t height          = model->getScalar<int32_t>(ins[2]);
+    const int32_t width = model->getScalar<int32_t>(ins[1]);
+    const int32_t height = model->getScalar<int32_t>(ins[2]);
 
     const hexagon_nn_input newdim = model->createValues<int32_t>({height, width});
 
@@ -471,7 +459,7 @@ bool softmax(const std::vector<uint32_t>& ins, const std::vector<uint32_t>& outs
 
     // get parameters
     const hexagon_nn_input& input = model->getTensor(ins[0]);
-    const hexagon_nn_input& beta  = model->getTensor(ins[1]);
+    const hexagon_nn_input& beta = model->getTensor(ins[1]);
 
     // add node to graph
     return model->addBasicOperation(OP_Softmax_f, NN_PAD_NA, {input, beta}, outs);
@@ -489,20 +477,19 @@ bool tanh(const std::vector<uint32_t>& ins, const std::vector<uint32_t>& outs,
     return model->addBasicOperation(OP_Tanh_f, NN_PAD_NA, {input}, outs);
 }
 
-}  // float32 namespace
+}  // namespace float32
 
 namespace quant8_asym {
 
-bool add(const std::vector<uint32_t>& ins, const std::vector<uint32_t>& outs,
-         HexagonModel* model) {
+bool add(const std::vector<uint32_t>& ins, const std::vector<uint32_t>& outs, HexagonModel* model) {
     HEXAGON_SOFT_ASSERT_EQ(3, ins.size(), "Need 3 inputs for quant8_asym::add");
     HEXAGON_SOFT_ASSERT_EQ(1, outs.size(), "Need 1 output for quant8_asym::add");
 
     // get parameters
-    const hexagon_nn_input& in1     = model->getTensor(ins[0]);
-    const hexagon_nn_input& in2     = model->getTensor(ins[1]);
+    const hexagon_nn_input& in1 = model->getTensor(ins[0]);
+    const hexagon_nn_input& in2 = model->getTensor(ins[1]);
 
-    const op_type act               = model->getQuantizedActivation(ins[2]);
+    const op_type act = model->getQuantizedActivation(ins[2]);
 
     const hexagon_nn_input& in1_min = model->getQuantizationMin(ins[0]);
     const hexagon_nn_input& in1_max = model->getQuantizationMax(ins[0]);
@@ -533,35 +520,34 @@ bool average_pool_2d(const std::vector<uint32_t>& ins, const std::vector<uint32_
 
     // get parameters
     if (ins.size() == 10) {
-        const int32_t padding_left   = model->getScalar<int32_t>(ins[1]);
-        const int32_t padding_right  = model->getScalar<int32_t>(ins[2]);
-        const int32_t padding_top    = model->getScalar<int32_t>(ins[3]);
+        const int32_t padding_left = model->getScalar<int32_t>(ins[1]);
+        const int32_t padding_right = model->getScalar<int32_t>(ins[2]);
+        const int32_t padding_top = model->getScalar<int32_t>(ins[3]);
         const int32_t padding_bottom = model->getScalar<int32_t>(ins[4]);
-        stride_width                 = model->getScalar<int32_t>(ins[5]);
-        stride_height                = model->getScalar<int32_t>(ins[6]);
-        filter_width                 = model->getScalar<int32_t>(ins[7]);
-        filter_height                = model->getScalar<int32_t>(ins[8]);
-        act                          = model->getQuantizedActivation(ins[9]);
+        stride_width = model->getScalar<int32_t>(ins[5]);
+        stride_height = model->getScalar<int32_t>(ins[6]);
+        filter_width = model->getScalar<int32_t>(ins[7]);
+        filter_height = model->getScalar<int32_t>(ins[8]);
+        act = model->getQuantizedActivation(ins[9]);
 
         const Shape inputShape = model->getShape(ins[0]);
-        pad = getPadding(inputShape.dimensions[2], inputShape.dimensions[1],
-                         stride_width, stride_height, filter_width, filter_height,
-                         padding_left, padding_right, padding_top, padding_bottom);
+        pad = getPadding(inputShape.dimensions[2], inputShape.dimensions[1], stride_width,
+                         stride_height, filter_width, filter_height, padding_left, padding_right,
+                         padding_top, padding_bottom);
         HEXAGON_SOFT_ASSERT_NE(pad, NN_PAD_NA, "Unknown padding");
-    }
-    else {
-        pad           = model->getPadding(ins[1]);
-        stride_width  = model->getScalar<int32_t>(ins[2]);
+    } else {
+        pad = model->getPadding(ins[1]);
+        stride_width = model->getScalar<int32_t>(ins[2]);
         stride_height = model->getScalar<int32_t>(ins[3]);
-        filter_width  = model->getScalar<int32_t>(ins[4]);
+        filter_width = model->getScalar<int32_t>(ins[4]);
         filter_height = model->getScalar<int32_t>(ins[5]);
-        act           = model->getQuantizedActivation(ins[6]);
+        act = model->getQuantizedActivation(ins[6]);
     }
 
     const hexagon_nn_input& in_min = model->getQuantizationMin(ins[0]);
     const hexagon_nn_input& in_max = model->getQuantizationMax(ins[0]);
-    const hexagon_nn_input window  = model->createShape(1, filter_height, filter_width, 1);
-    const hexagon_nn_input stride  = model->createShape(1, stride_height, stride_width, 1);
+    const hexagon_nn_input window = model->createShape(1, filter_height, filter_width, 1);
+    const hexagon_nn_input stride = model->createShape(1, stride_height, stride_width, 1);
 
     // add node to graph
     return model->addQuant8OperationWithActivation(OP_QuantizedAvgPool_8, pad, act,
@@ -578,9 +564,9 @@ bool concatenation(const std::vector<uint32_t>& ins, const std::vector<uint32_t>
     // get parameters
     std::vector<hexagon_nn_input> inputs(numInputTensors * 3 + 1);
     for (size_t i = 0; i < numInputTensors; ++i) {
-        inputs[i+1+numInputTensors*0] = model->getTensor(ins[i]);
-        inputs[i+1+numInputTensors*1] = model->getQuantizationMin(ins[i]);
-        inputs[i+1+numInputTensors*2] = model->getQuantizationMax(ins[i]);
+        inputs[i + 1 + numInputTensors * 0] = model->getTensor(ins[i]);
+        inputs[i + 1 + numInputTensors * 1] = model->getQuantizationMin(ins[i]);
+        inputs[i + 1 + numInputTensors * 2] = model->getQuantizationMax(ins[i]);
     }
 
     // axis being concatenated
@@ -599,9 +585,9 @@ bool conv_2d(const std::vector<uint32_t>& ins, const std::vector<uint32_t>& outs
     HEXAGON_SOFT_ASSERT_EQ(1, outs.size(), "Need 1 output for quant8_asym::conv_2d");
 
     // get parameters
-    const hexagon_nn_input& input      = model->getTensor(ins[0]);
-    const hexagon_nn_input  filter     = model->createConvFilterTensor(ins[1]);
-    const hexagon_nn_input& bias       = model->getTensor(ins[2]);
+    const hexagon_nn_input& input = model->getTensor(ins[0]);
+    const hexagon_nn_input filter = model->createConvFilterTensor(ins[1]);
+    const hexagon_nn_input& bias = model->getTensor(ins[2]);
 
     // setup parameters
     hexagon_nn_padding_type pad;
@@ -611,42 +597,40 @@ bool conv_2d(const std::vector<uint32_t>& ins, const std::vector<uint32_t>& outs
 
     // get parameters
     if (ins.size() == 10) {
-        const int32_t padding_left   = model->getScalar<int32_t>(ins[3]);
-        const int32_t padding_right  = model->getScalar<int32_t>(ins[4]);
-        const int32_t padding_top    = model->getScalar<int32_t>(ins[5]);
+        const int32_t padding_left = model->getScalar<int32_t>(ins[3]);
+        const int32_t padding_right = model->getScalar<int32_t>(ins[4]);
+        const int32_t padding_top = model->getScalar<int32_t>(ins[5]);
         const int32_t padding_bottom = model->getScalar<int32_t>(ins[6]);
-        stride_width                 = model->getScalar<int32_t>(ins[7]);
-        stride_height                = model->getScalar<int32_t>(ins[8]);
-        act                          = model->getQuantizedActivation(ins[9]);
+        stride_width = model->getScalar<int32_t>(ins[7]);
+        stride_height = model->getScalar<int32_t>(ins[8]);
+        act = model->getQuantizedActivation(ins[9]);
 
         const Shape inputShape = model->getShape(ins[0]);
         const Shape filterShape = model->getShape(ins[1]);
-        pad = getPadding(inputShape.dimensions[2], inputShape.dimensions[1],
-                         stride_width, stride_height, filterShape.dimensions[2],
-                         filterShape.dimensions[1], padding_left, padding_right,
-                         padding_top, padding_bottom);
+        pad = getPadding(inputShape.dimensions[2], inputShape.dimensions[1], stride_width,
+                         stride_height, filterShape.dimensions[2], filterShape.dimensions[1],
+                         padding_left, padding_right, padding_top, padding_bottom);
         HEXAGON_SOFT_ASSERT_NE(pad, NN_PAD_NA, "Unknown padding");
-    }
-    else {
-        pad           = model->getPadding(ins[3]);
-        stride_width  = model->getScalar<int32_t>(ins[4]);
+    } else {
+        pad = model->getPadding(ins[3]);
+        stride_width = model->getScalar<int32_t>(ins[4]);
         stride_height = model->getScalar<int32_t>(ins[5]);
-        act           = model->getQuantizedActivation(ins[6]);
+        act = model->getQuantizedActivation(ins[6]);
     }
 
-    const hexagon_nn_input& input_min  = model->getQuantizationMin(ins[0]);
-    const hexagon_nn_input& input_max  = model->getQuantizationMax(ins[0]);
+    const hexagon_nn_input& input_min = model->getQuantizationMin(ins[0]);
+    const hexagon_nn_input& input_max = model->getQuantizationMax(ins[0]);
     const hexagon_nn_input& filter_min = model->getQuantizationMin(ins[1]);
     const hexagon_nn_input& filter_max = model->getQuantizationMax(ins[1]);
-    const hexagon_nn_input& bias_min   = model->getQuantizationMin(ins[2]);
-    const hexagon_nn_input& bias_max   = model->getQuantizationMax(ins[2]);
+    const hexagon_nn_input& bias_min = model->getQuantizationMin(ins[2]);
+    const hexagon_nn_input& bias_max = model->getQuantizationMax(ins[2]);
 
     const hexagon_nn_input stride = model->createShape(1, stride_height, stride_width, 1);
 
     // add node to graph
     return model->addFusedQuant8Operation(
-            OP_QuantizedConv2d_8x8to32, pad, {bias, bias_min, bias_max}, act,
-            {input, filter, input_min, input_max, filter_min, filter_max, stride}, outs);
+        OP_QuantizedConv2d_8x8to32, pad, {bias, bias_min, bias_max}, act,
+        {input, filter, input_min, input_max, filter_min, filter_max, stride}, outs);
 }
 
 bool depthwise_conv_2d(const std::vector<uint32_t>& ins, const std::vector<uint32_t>& outs,
@@ -657,7 +641,7 @@ bool depthwise_conv_2d(const std::vector<uint32_t>& ins, const std::vector<uint3
 
     // get parameters
     const hexagon_nn_input& input = model->getTensor(ins[0]);
-    const hexagon_nn_input& bias  = model->getTensor(ins[2]);
+    const hexagon_nn_input& bias = model->getTensor(ins[2]);
 
     // setup parameters
     hexagon_nn_padding_type pad;
@@ -668,45 +652,43 @@ bool depthwise_conv_2d(const std::vector<uint32_t>& ins, const std::vector<uint3
 
     // get parameters
     if (ins.size() == 11) {
-        const int32_t padding_left   = model->getScalar<int32_t>(ins[3]);
-        const int32_t padding_right  = model->getScalar<int32_t>(ins[4]);
-        const int32_t padding_top    = model->getScalar<int32_t>(ins[5]);
+        const int32_t padding_left = model->getScalar<int32_t>(ins[3]);
+        const int32_t padding_right = model->getScalar<int32_t>(ins[4]);
+        const int32_t padding_top = model->getScalar<int32_t>(ins[5]);
         const int32_t padding_bottom = model->getScalar<int32_t>(ins[6]);
-        stride_width                 = model->getScalar<int32_t>(ins[7]);
-        stride_height                = model->getScalar<int32_t>(ins[8]);
-        depth_multiplier             = model->getScalar<int32_t>(ins[9]);
-        act                          = model->getQuantizedActivation(ins[10]);
+        stride_width = model->getScalar<int32_t>(ins[7]);
+        stride_height = model->getScalar<int32_t>(ins[8]);
+        depth_multiplier = model->getScalar<int32_t>(ins[9]);
+        act = model->getQuantizedActivation(ins[10]);
 
         const Shape inputShape = model->getShape(ins[0]);
         const Shape filterShape = model->getShape(ins[1]);
-        pad = getPadding(inputShape.dimensions[2], inputShape.dimensions[1],
-                         stride_width, stride_height, filterShape.dimensions[2],
-                         filterShape.dimensions[1], padding_left, padding_right,
-                         padding_top, padding_bottom);
+        pad = getPadding(inputShape.dimensions[2], inputShape.dimensions[1], stride_width,
+                         stride_height, filterShape.dimensions[2], filterShape.dimensions[1],
+                         padding_left, padding_right, padding_top, padding_bottom);
         HEXAGON_SOFT_ASSERT_NE(pad, NN_PAD_NA, "Unknown padding");
-    }
-    else {
-        pad              = model->getPadding(ins[3]);
-        stride_width     = model->getScalar<int32_t>(ins[4]);
-        stride_height    = model->getScalar<int32_t>(ins[5]);
+    } else {
+        pad = model->getPadding(ins[3]);
+        stride_width = model->getScalar<int32_t>(ins[4]);
+        stride_height = model->getScalar<int32_t>(ins[5]);
         depth_multiplier = model->getScalar<int32_t>(ins[6]);
-        act              = model->getQuantizedActivation(ins[7]);
+        act = model->getQuantizedActivation(ins[7]);
     }
 
-    const hexagon_nn_input& input_min  = model->getQuantizationMin(ins[0]);
-    const hexagon_nn_input& input_max  = model->getQuantizationMax(ins[0]);
+    const hexagon_nn_input& input_min = model->getQuantizationMin(ins[0]);
+    const hexagon_nn_input& input_max = model->getQuantizationMax(ins[0]);
     const hexagon_nn_input& filter_min = model->getQuantizationMin(ins[1]);
     const hexagon_nn_input& filter_max = model->getQuantizationMax(ins[1]);
-    const hexagon_nn_input& bias_min   = model->getQuantizationMin(ins[2]);
-    const hexagon_nn_input& bias_max   = model->getQuantizationMax(ins[2]);
+    const hexagon_nn_input& bias_min = model->getQuantizationMin(ins[2]);
+    const hexagon_nn_input& bias_max = model->getQuantizationMax(ins[2]);
 
     const hexagon_nn_input filter = model->createDepthwiseFilterTensor(ins[1], depth_multiplier);
     const hexagon_nn_input stride = model->createShape(1, stride_height, stride_width, 1);
 
     // add node to graph
     return model->addFusedQuant8Operation(
-            OP_QuantizedDepthwiseConv2d_8x8to32, pad, {bias, bias_min, bias_max}, act,
-            {input, filter, input_min, input_max, filter_min, filter_max, stride}, outs);
+        OP_QuantizedDepthwiseConv2d_8x8to32, pad, {bias, bias_min, bias_max}, act,
+        {input, filter, input_min, input_max, filter_min, filter_max, stride}, outs);
 }
 
 bool dequantize(const std::vector<uint32_t>& ins, const std::vector<uint32_t>& outs,
@@ -715,7 +697,7 @@ bool dequantize(const std::vector<uint32_t>& ins, const std::vector<uint32_t>& o
     HEXAGON_SOFT_ASSERT_EQ(1, outs.size(), "Need 1 output for quant8_asym::dequantize");
 
     // get parameters
-    const hexagon_nn_input& input     = model->getTensor(ins[0]);
+    const hexagon_nn_input& input = model->getTensor(ins[0]);
 
     const hexagon_nn_input& input_min = model->getQuantizationMin(ins[0]);
     const hexagon_nn_input& input_max = model->getQuantizationMax(ins[0]);
@@ -730,23 +712,23 @@ bool fully_connected(const std::vector<uint32_t>& ins, const std::vector<uint32_
     HEXAGON_SOFT_ASSERT_EQ(1, outs.size(), "Need 1 output for quant8::fully_connected");
 
     // get parameters
-    const hexagon_nn_input& input       = model->getTensor(ins[0]);
-    const hexagon_nn_input& weights     = model->createFullyConnectedWeightTensor(ins[1]);
-    const hexagon_nn_input& bias        = model->getTensor(ins[2]);
+    const hexagon_nn_input& input = model->getTensor(ins[0]);
+    const hexagon_nn_input& weights = model->createFullyConnectedWeightTensor(ins[1]);
+    const hexagon_nn_input& bias = model->getTensor(ins[2]);
 
-    const op_type act                   = model->getQuantizedActivation(ins[3]);
+    const op_type act = model->getQuantizedActivation(ins[3]);
 
-    const hexagon_nn_input& input_min   = model->getQuantizationMin(ins[0]);
-    const hexagon_nn_input& input_max   = model->getQuantizationMax(ins[0]);
+    const hexagon_nn_input& input_min = model->getQuantizationMin(ins[0]);
+    const hexagon_nn_input& input_max = model->getQuantizationMax(ins[0]);
     const hexagon_nn_input& weights_min = model->getQuantizationMin(ins[1]);
     const hexagon_nn_input& weights_max = model->getQuantizationMax(ins[1]);
-    const hexagon_nn_input& bias_min    = model->getQuantizationMin(ins[2]);
-    const hexagon_nn_input& bias_max    = model->getQuantizationMax(ins[2]);
+    const hexagon_nn_input& bias_min = model->getQuantizationMin(ins[2]);
+    const hexagon_nn_input& bias_max = model->getQuantizationMax(ins[2]);
 
     // add node to graph
     return model->addFusedQuant8Operation(
-            OP_QuantizedMatMul_8x8to32, NN_PAD_NA, {bias, bias_min, bias_max}, act,
-            {input, weights, input_min, input_max, weights_min, weights_max}, outs);
+        OP_QuantizedMatMul_8x8to32, NN_PAD_NA, {bias, bias_min, bias_max}, act,
+        {input, weights, input_min, input_max, weights_min, weights_max}, outs);
 }
 
 bool logistic(const std::vector<uint32_t>& ins, const std::vector<uint32_t>& outs,
@@ -760,11 +742,11 @@ bool logistic(const std::vector<uint32_t>& ins, const std::vector<uint32_t>& out
     const hexagon_nn_input& input_min = model->getQuantizationMin(ins[0]);
 
     // TFLite uses different max value
-    const hexagon_nn_input  input_max = model->createQuantizationValue(ins[0], 256);
+    const hexagon_nn_input input_max = model->createQuantizationValue(ins[0], 256);
 
     // add node to graph
-    return model->addBasicOperation(OP_QuantizedSigmoid_8, NN_PAD_NA,
-                                    {input, input_min, input_max}, outs);
+    return model->addBasicOperation(OP_QuantizedSigmoid_8, NN_PAD_NA, {input, input_min, input_max},
+                                    outs);
 }
 
 bool max_pool_2d(const std::vector<uint32_t>& ins, const std::vector<uint32_t>& outs,
@@ -774,7 +756,7 @@ bool max_pool_2d(const std::vector<uint32_t>& ins, const std::vector<uint32_t>& 
     HEXAGON_SOFT_ASSERT_EQ(1, outs.size(), "Need 1 output for quant8_asym::max_pool_2d");
 
     // get parameters
-    const hexagon_nn_input& input     = model->getTensor(ins[0]);
+    const hexagon_nn_input& input = model->getTensor(ins[0]);
 
     // setup parameters
     hexagon_nn_padding_type pad;
@@ -786,52 +768,49 @@ bool max_pool_2d(const std::vector<uint32_t>& ins, const std::vector<uint32_t>& 
 
     // get parameters
     if (ins.size() == 10) {
-        const int32_t padding_left   = model->getScalar<int32_t>(ins[1]);
-        const int32_t padding_right  = model->getScalar<int32_t>(ins[2]);
-        const int32_t padding_top    = model->getScalar<int32_t>(ins[3]);
+        const int32_t padding_left = model->getScalar<int32_t>(ins[1]);
+        const int32_t padding_right = model->getScalar<int32_t>(ins[2]);
+        const int32_t padding_top = model->getScalar<int32_t>(ins[3]);
         const int32_t padding_bottom = model->getScalar<int32_t>(ins[4]);
-        stride_width                 = model->getScalar<int32_t>(ins[5]);
-        stride_height                = model->getScalar<int32_t>(ins[6]);
-        filter_width                 = model->getScalar<int32_t>(ins[7]);
-        filter_height                = model->getScalar<int32_t>(ins[8]);
-        act                          = model->getQuantizedActivation(ins[9]);
+        stride_width = model->getScalar<int32_t>(ins[5]);
+        stride_height = model->getScalar<int32_t>(ins[6]);
+        filter_width = model->getScalar<int32_t>(ins[7]);
+        filter_height = model->getScalar<int32_t>(ins[8]);
+        act = model->getQuantizedActivation(ins[9]);
 
         const Shape inputShape = model->getShape(ins[0]);
-        pad = getPadding(inputShape.dimensions[2], inputShape.dimensions[1],
-                         stride_width, stride_height, filter_width, filter_height,
-                         padding_left, padding_right, padding_top, padding_bottom);
+        pad = getPadding(inputShape.dimensions[2], inputShape.dimensions[1], stride_width,
+                         stride_height, filter_width, filter_height, padding_left, padding_right,
+                         padding_top, padding_bottom);
         HEXAGON_SOFT_ASSERT_NE(pad, NN_PAD_NA, "Unknown padding");
-    }
-    else {
-        pad           = model->getPadding(ins[1]);
-        stride_width  = model->getScalar<int32_t>(ins[2]);
+    } else {
+        pad = model->getPadding(ins[1]);
+        stride_width = model->getScalar<int32_t>(ins[2]);
         stride_height = model->getScalar<int32_t>(ins[3]);
-        filter_width  = model->getScalar<int32_t>(ins[4]);
+        filter_width = model->getScalar<int32_t>(ins[4]);
         filter_height = model->getScalar<int32_t>(ins[5]);
-        act           = model->getQuantizedActivation(ins[6]);
+        act = model->getQuantizedActivation(ins[6]);
     }
 
     const hexagon_nn_input& input_min = model->getQuantizationMin(ins[0]);
     const hexagon_nn_input& input_max = model->getQuantizationMax(ins[0]);
-    const hexagon_nn_input window     = model->createShape(1, filter_height, filter_width, 1);
-    const hexagon_nn_input stride     = model->createShape(1, stride_height, stride_width, 1);
+    const hexagon_nn_input window = model->createShape(1, filter_height, filter_width, 1);
+    const hexagon_nn_input stride = model->createShape(1, stride_height, stride_width, 1);
 
     // add node to graph
-    return model->addQuant8OperationWithActivation(OP_QuantizedMaxPool_8, pad, act,
-                                                   {input, input_min, input_max, window, stride},
-                                                   outs);
+    return model->addQuant8OperationWithActivation(
+        OP_QuantizedMaxPool_8, pad, act, {input, input_min, input_max, window, stride}, outs);
 }
 
-bool mul(const std::vector<uint32_t>& ins, const std::vector<uint32_t>& outs,
-         HexagonModel* model) {
+bool mul(const std::vector<uint32_t>& ins, const std::vector<uint32_t>& outs, HexagonModel* model) {
     HEXAGON_SOFT_ASSERT_EQ(3, ins.size(), "Need 3 inputs for quant8_asym::mul");
     HEXAGON_SOFT_ASSERT_EQ(1, outs.size(), "Need 1 output for quant8_asym::mul");
 
     // get parameters
-    const hexagon_nn_input& in1     = model->getTensor(ins[0]);
-    const hexagon_nn_input& in2     = model->getTensor(ins[1]);
+    const hexagon_nn_input& in1 = model->getTensor(ins[0]);
+    const hexagon_nn_input& in2 = model->getTensor(ins[1]);
 
-    const op_type act               = model->getQuantizedActivation(ins[2]);
+    const op_type act = model->getQuantizedActivation(ins[2]);
 
     const hexagon_nn_input& in1_min = model->getQuantizationMin(ins[0]);
     const hexagon_nn_input& in1_max = model->getQuantizationMax(ins[0]);
@@ -849,14 +828,14 @@ bool relu(const std::vector<uint32_t>& ins, const std::vector<uint32_t>& outs,
     HEXAGON_SOFT_ASSERT_EQ(1, outs.size(), "Need 1 output for quant8_asym::relu");
 
     // get parameters
-    const hexagon_nn_input& input     = model->getTensor(ins[0]);
+    const hexagon_nn_input& input = model->getTensor(ins[0]);
 
     const hexagon_nn_input& input_min = model->getQuantizationMin(ins[0]);
     const hexagon_nn_input& input_max = model->getQuantizationMax(ins[0]);
 
     // add node to graph
-    return model->addBasicOperation(OP_QuantizedRelu_8, NN_PAD_NA,
-                                    {input, input_min, input_max}, outs);
+    return model->addBasicOperation(OP_QuantizedRelu_8, NN_PAD_NA, {input, input_min, input_max},
+                                    outs);
 }
 
 bool relu1(const std::vector<uint32_t>& ins, const std::vector<uint32_t>& outs,
@@ -866,8 +845,8 @@ bool relu1(const std::vector<uint32_t>& ins, const std::vector<uint32_t>& outs,
 
     // get parameters
     const hexagon_nn_input& input = model->getTensor(ins[0]);
-    const hexagon_nn_input  min   = model->createScalar(-1.0f);
-    const hexagon_nn_input  max   = model->createScalar(1.0f);
+    const hexagon_nn_input min = model->createScalar(-1.0f);
+    const hexagon_nn_input max = model->createScalar(1.0f);
 
     const hexagon_nn_input& input_min = model->getQuantizationMin(ins[0]);
     const hexagon_nn_input& input_max = model->getQuantizationMax(ins[0]);
@@ -884,7 +863,7 @@ bool relu6(const std::vector<uint32_t>& ins, const std::vector<uint32_t>& outs,
 
     // get parameters
     const hexagon_nn_input& input = model->getTensor(ins[0]);
-    const hexagon_nn_input  max   = model->createScalar(6.0f);
+    const hexagon_nn_input max = model->createScalar(6.0f);
 
     const hexagon_nn_input& input_min = model->getQuantizationMin(ins[0]);
     const hexagon_nn_input& input_max = model->getQuantizationMax(ins[0]);
@@ -900,7 +879,7 @@ bool reshape(const std::vector<uint32_t>& ins, const std::vector<uint32_t>& outs
     HEXAGON_SOFT_ASSERT_EQ(1, outs.size(), "Need 1 output for quant8_asym::reshape");
 
     // get parameters
-    const hexagon_nn_input& input   = model->getTensor(ins[0]);
+    const hexagon_nn_input& input = model->getTensor(ins[0]);
     const hexagon_nn_input& newdims = model->getTensor(ins[1]);
 
     const hexagon_nn_input& input_min = model->getQuantizationMin(ins[0]);
@@ -918,7 +897,7 @@ bool softmax(const std::vector<uint32_t>& ins, const std::vector<uint32_t>& outs
 
     // get parameters
     const hexagon_nn_input& input = model->getTensor(ins[0]);
-    const hexagon_nn_input& beta  = model->getTensor(ins[1]);
+    const hexagon_nn_input& beta = model->getTensor(ins[1]);
 
     const hexagon_nn_input& input_min = model->getQuantizationMin(ins[0]);
     const hexagon_nn_input& input_max = model->getQuantizationMax(ins[0]);
@@ -928,84 +907,90 @@ bool softmax(const std::vector<uint32_t>& ins, const std::vector<uint32_t>& outs
                                     {input, input_min, input_max, beta}, outs);
 }
 
-}  // quant8_asym namespace
+}  // namespace quant8_asym
 
 }  // namespace
 
 OperationPrepareTable& getOperationPrepareTable() {
     static OperationPrepareTable table = {
         // -------------------------- 32-BIT FLOAT ----------------------------
-        {{OperationType::ADD, OperandType::TENSOR_FLOAT32},             float32::add             },
-        {{OperationType::AVERAGE_POOL_2D, OperandType::TENSOR_FLOAT32}, float32::average_pool_2d },
-        {{OperationType::CONCATENATION, OperandType::TENSOR_FLOAT32},   float32::concatenation   },
-        {{OperationType::CONV_2D, OperandType::TENSOR_FLOAT32},         float32::conv_2d         },
+        {{OperationType::ADD, OperandType::TENSOR_FLOAT32}, float32::add},
+        {{OperationType::AVERAGE_POOL_2D, OperandType::TENSOR_FLOAT32}, float32::average_pool_2d},
+        {{OperationType::CONCATENATION, OperandType::TENSOR_FLOAT32}, float32::concatenation},
+        {{OperationType::CONV_2D, OperandType::TENSOR_FLOAT32}, float32::conv_2d},
         {{OperationType::DEPTHWISE_CONV_2D, OperandType::TENSOR_FLOAT32},
-                                                                       float32::depthwise_conv_2d},
-//      {{OperationType::DEPTH_TO_SPACE, OperandType::TENSOR_FLOAT32},  float32::depth_to_space  },
-//      {{OperationType::EMBEDDING_LOOKUP, OperandType::TENSOR_FLOAT32},
-//                                                                      float32::embedding_lookup},
-//      {{OperationType::FLOOR, OperandType::TENSOR_FLOAT32},           float32::floor           },
-        {{OperationType::FULLY_CONNECTED, OperandType::TENSOR_FLOAT32}, float32::fully_connected },
-//      {{OperationType::HASHTABLE_LOOKUP, OperandType::TENSOR_FLOAT32},
-//                                                                      float32::hashtable_lookup},
-//      {{OperationType::L2_NORMALIZATION, OperandType::TENSOR_FLOAT32},
-//                                                                      float32::l2_normalization},
-        {{OperationType::L2_POOL_2D, OperandType::TENSOR_FLOAT32},      float32::l2_pool_2d      },
+         float32::depthwise_conv_2d},
+        //      {{OperationType::DEPTH_TO_SPACE, OperandType::TENSOR_FLOAT32},
+        //      float32::depth_to_space  },
+        //      {{OperationType::EMBEDDING_LOOKUP, OperandType::TENSOR_FLOAT32},
+        //                                                                      float32::embedding_lookup},
+        //      {{OperationType::FLOOR, OperandType::TENSOR_FLOAT32},           float32::floor },
+        {{OperationType::FULLY_CONNECTED, OperandType::TENSOR_FLOAT32}, float32::fully_connected},
+        //      {{OperationType::HASHTABLE_LOOKUP, OperandType::TENSOR_FLOAT32},
+        //                                                                      float32::hashtable_lookup},
+        //      {{OperationType::L2_NORMALIZATION, OperandType::TENSOR_FLOAT32},
+        //                                                                      float32::l2_normalization},
+        {{OperationType::L2_POOL_2D, OperandType::TENSOR_FLOAT32}, float32::l2_pool_2d},
         {{OperationType::LOCAL_RESPONSE_NORMALIZATION, OperandType::TENSOR_FLOAT32},
-                                                            float32::local_response_normalization},
-        {{OperationType::LOGISTIC, OperandType::TENSOR_FLOAT32},        float32::logistic        },
-//      {{OperationType::LSH_PROJECTION, OperandType::TENSOR_FLOAT32},  float32::lsh_projection  },
-//      {{OperationType::LSTM, OperandType::TENSOR_FLOAT32},            float32::lstm            },
-        {{OperationType::MAX_POOL_2D, OperandType::TENSOR_FLOAT32},     float32::max_pool_2d     },
-        {{OperationType::MUL, OperandType::TENSOR_FLOAT32},             float32::mul             },
-        {{OperationType::RELU, OperandType::TENSOR_FLOAT32},            float32::relu            },
-        {{OperationType::RELU1, OperandType::TENSOR_FLOAT32},           float32::relu1           },
-        {{OperationType::RELU6, OperandType::TENSOR_FLOAT32},           float32::relu6           },
-        {{OperationType::RESHAPE, OperandType::TENSOR_FLOAT32},         float32::reshape         },
-        {{OperationType::RESIZE_BILINEAR, OperandType::TENSOR_FLOAT32}, float32::resize_bilinear },
-//      {{OperationType::RNN, OperandType::TENSOR_FLOAT32},             float32::rnn             },
-        {{OperationType::SOFTMAX, OperandType::TENSOR_FLOAT32},         float32::softmax         },
-//      {{OperationType::SPACE_TO_DEPTH, OperandType::TENSOR_FLOAT32},  float32::space_to_depth  },
-//      {{OperationType::SVDF, OperandType::TENSOR_FLOAT32},            float32::svdf            },
-        {{OperationType::TANH, OperandType::TENSOR_FLOAT32},            float32::tanh            },
+         float32::local_response_normalization},
+        {{OperationType::LOGISTIC, OperandType::TENSOR_FLOAT32}, float32::logistic},
+        //      {{OperationType::LSH_PROJECTION, OperandType::TENSOR_FLOAT32},
+        //      float32::lsh_projection  },
+        //      {{OperationType::LSTM, OperandType::TENSOR_FLOAT32},            float32::lstm },
+        {{OperationType::MAX_POOL_2D, OperandType::TENSOR_FLOAT32}, float32::max_pool_2d},
+        {{OperationType::MUL, OperandType::TENSOR_FLOAT32}, float32::mul},
+        {{OperationType::RELU, OperandType::TENSOR_FLOAT32}, float32::relu},
+        {{OperationType::RELU1, OperandType::TENSOR_FLOAT32}, float32::relu1},
+        {{OperationType::RELU6, OperandType::TENSOR_FLOAT32}, float32::relu6},
+        {{OperationType::RESHAPE, OperandType::TENSOR_FLOAT32}, float32::reshape},
+        {{OperationType::RESIZE_BILINEAR, OperandType::TENSOR_FLOAT32}, float32::resize_bilinear},
+        //      {{OperationType::RNN, OperandType::TENSOR_FLOAT32},             float32::rnn },
+        {{OperationType::SOFTMAX, OperandType::TENSOR_FLOAT32}, float32::softmax},
+        //      {{OperationType::SPACE_TO_DEPTH, OperandType::TENSOR_FLOAT32},
+        //      float32::space_to_depth  },
+        //      {{OperationType::SVDF, OperandType::TENSOR_FLOAT32},            float32::svdf },
+        {{OperationType::TANH, OperandType::TENSOR_FLOAT32}, float32::tanh},
 
         // -------------------- QUANTIZED 8-BIT ASYMMETRICAL ------------------
-        {{OperationType::ADD, OperandType::TENSOR_QUANT8_ASYMM},     quant8_asym::add            },
+        {{OperationType::ADD, OperandType::TENSOR_QUANT8_ASYMM}, quant8_asym::add},
         {{OperationType::AVERAGE_POOL_2D, OperandType::TENSOR_QUANT8_ASYMM},
-                                                                     quant8_asym::average_pool_2d},
+         quant8_asym::average_pool_2d},
         {{OperationType::CONCATENATION, OperandType::TENSOR_QUANT8_ASYMM},
-                                                                     quant8_asym::concatenation  },
-        {{OperationType::CONV_2D, OperandType::TENSOR_QUANT8_ASYMM},    quant8_asym::conv_2d     },
+         quant8_asym::concatenation},
+        {{OperationType::CONV_2D, OperandType::TENSOR_QUANT8_ASYMM}, quant8_asym::conv_2d},
         {{OperationType::DEPTHWISE_CONV_2D, OperandType::TENSOR_QUANT8_ASYMM},
-                                                                   quant8_asym::depthwise_conv_2d},
-//      {{OperationType::DEPTH_TO_SPACE, OperandType::TENSOR_QUANT8_ASYMM},
-//                                                                   quant8_asym::depth_to_space },
-        {{OperationType::DEQUANTIZE, OperandType::TENSOR_QUANT8_ASYMM}, quant8_asym::dequantize  },
-//      {{OperationType::EMBEDDING_LOOKUP, OperandType::TENSOR_QUANT8_ASYMM},
-//                                                                  quant8_asym::embedding_lookup},
+         quant8_asym::depthwise_conv_2d},
+        //      {{OperationType::DEPTH_TO_SPACE, OperandType::TENSOR_QUANT8_ASYMM},
+        //                                                                   quant8_asym::depth_to_space
+        //                                                                   },
+        {{OperationType::DEQUANTIZE, OperandType::TENSOR_QUANT8_ASYMM}, quant8_asym::dequantize},
+        //      {{OperationType::EMBEDDING_LOOKUP, OperandType::TENSOR_QUANT8_ASYMM},
+        //                                                                  quant8_asym::embedding_lookup},
         {{OperationType::FULLY_CONNECTED, OperandType::TENSOR_QUANT8_ASYMM},
-                                                                     quant8_asym::fully_connected},
-//      {{OperationType::HASHTABLE_LOOKUP, OperandType::TENSOR_QUANT8_ASYMM},
-//                                                                  quant8_asym::hashtable_lookup},
-        {{OperationType::LOGISTIC, OperandType::TENSOR_QUANT8_ASYMM}, quant8_asym::logistic      },
-//      {{OperationType::LSH_PROJECTION, OperandType::TENSOR_QUANT8_ASYMM},
-//                                                                   quant8_asym::lsh_projection },
+         quant8_asym::fully_connected},
+        //      {{OperationType::HASHTABLE_LOOKUP, OperandType::TENSOR_QUANT8_ASYMM},
+        //                                                                  quant8_asym::hashtable_lookup},
+        {{OperationType::LOGISTIC, OperandType::TENSOR_QUANT8_ASYMM}, quant8_asym::logistic},
+        //      {{OperationType::LSH_PROJECTION, OperandType::TENSOR_QUANT8_ASYMM},
+        //                                                                   quant8_asym::lsh_projection
+        //                                                                   },
         {{OperationType::MAX_POOL_2D, OperandType::TENSOR_QUANT8_ASYMM}, quant8_asym::max_pool_2d},
-        {{OperationType::MUL, OperandType::TENSOR_QUANT8_ASYMM},     quant8_asym::mul            },
-        {{OperationType::RELU, OperandType::TENSOR_QUANT8_ASYMM},    quant8_asym::relu           },
-        {{OperationType::RELU1, OperandType::TENSOR_QUANT8_ASYMM},   quant8_asym::relu1          },
-        {{OperationType::RELU6, OperandType::TENSOR_QUANT8_ASYMM},   quant8_asym::relu6          },
-        {{OperationType::RESHAPE, OperandType::TENSOR_QUANT8_ASYMM}, quant8_asym::reshape        },
-        {{OperationType::SOFTMAX, OperandType::TENSOR_QUANT8_ASYMM}, quant8_asym::softmax        },
-//      {{OperationType::SPACE_TO_DEPTH, OperandType::TENSOR_QUANT8_ASYMM},
-//                                                                   quant8_asym::space_to_depth },
+        {{OperationType::MUL, OperandType::TENSOR_QUANT8_ASYMM}, quant8_asym::mul},
+        {{OperationType::RELU, OperandType::TENSOR_QUANT8_ASYMM}, quant8_asym::relu},
+        {{OperationType::RELU1, OperandType::TENSOR_QUANT8_ASYMM}, quant8_asym::relu1},
+        {{OperationType::RELU6, OperandType::TENSOR_QUANT8_ASYMM}, quant8_asym::relu6},
+        {{OperationType::RESHAPE, OperandType::TENSOR_QUANT8_ASYMM}, quant8_asym::reshape},
+        {{OperationType::SOFTMAX, OperandType::TENSOR_QUANT8_ASYMM}, quant8_asym::softmax},
+        //      {{OperationType::SPACE_TO_DEPTH, OperandType::TENSOR_QUANT8_ASYMM},
+        //                                                                   quant8_asym::space_to_depth
+        //                                                                   },
     };
     return table;
 }
 
-} // namespace hexagon
-} // namespace implementation
-} // namespace V1_0
-} // namespace neuralnetworks
-} // namespace hardware
-} // namespace android
+}  // namespace hexagon
+}  // namespace implementation
+}  // namespace V1_0
+}  // namespace neuralnetworks
+}  // namespace hardware
+}  // namespace android

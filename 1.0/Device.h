@@ -30,13 +30,13 @@ namespace neuralnetworks {
 namespace V1_0 {
 namespace implementation {
 
+using ::android::sp;
 using ::android::hardware::hidl_array;
 using ::android::hardware::hidl_memory;
 using ::android::hardware::hidl_string;
 using ::android::hardware::hidl_vec;
 using ::android::hardware::Return;
 using ::android::hardware::Void;
-using ::android::sp;
 
 struct Device : public IDevice {
     Device();
@@ -50,7 +50,7 @@ struct Device : public IDevice {
                                      const sp<IPreparedModelCallback>& callback) override;
     Return<DeviceStatus> getStatus() override;
 
-private:
+   private:
     void asyncPrepare(const Model& model, const sp<IPreparedModelCallback>& callback);
 
     DeviceStatus mCurrentStatus;

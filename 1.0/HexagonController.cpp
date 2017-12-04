@@ -19,7 +19,7 @@
 #include "HexagonController.h"
 
 #define LOAD_HEXAGON_FUNCTION(name) \
-    mFn_##name = loadFunction<hexagon_nn_controller_##name##_fn>("hexagon_nn_controller_"#name);
+    mFn_##name = loadFunction<hexagon_nn_controller_##name##_fn>("hexagon_nn_controller_" #name);
 
 #define CLOSE_HEXAGON_FUNCTION(name) mFn_##name = nullptr;
 
@@ -73,7 +73,8 @@ Controller::~Controller() {
 
 bool Controller::openNnlib() {
     mHandle = dlopen(kFilename, RTLD_LAZY | RTLD_LOCAL);
-    HEXAGON_SOFT_ASSERT_NE(mHandle, 0, "FAILED TO LOAD LIBRARY "/* << kFilename << ": " << dlerror()*/);
+    HEXAGON_SOFT_ASSERT_NE(mHandle, 0,
+                           "FAILED TO LOAD LIBRARY " /* << kFilename << ": " << dlerror()*/);
     FOR_EACH_FUNCTION(LOAD_HEXAGON_FUNCTION)
     return true;
 }
@@ -107,7 +108,7 @@ hexagon_nn_nn_id Controller::init() {
     return id;
 }
 
-int Controller::getlog(hexagon_nn_nn_id id, unsigned char *buf, uint32_t length) {
+int Controller::getlog(hexagon_nn_nn_id id, unsigned char* buf, uint32_t length) {
     if (mFn_getlog == nullptr) {
         return -1;
     }
@@ -117,7 +118,7 @@ int Controller::getlog(hexagon_nn_nn_id id, unsigned char *buf, uint32_t length)
     return 0;
 }
 
-int Controller::snpprint(hexagon_nn_nn_id id, unsigned char *buf, uint32_t length) {
+int Controller::snpprint(hexagon_nn_nn_id id, unsigned char* buf, uint32_t length) {
     if (mFn_snpprint == nullptr) {
         return -1;
     }
@@ -147,47 +148,34 @@ int Controller::prepare(hexagon_nn_nn_id id) {
     return 0;
 }
 
-int Controller::append_node(hexagon_nn_nn_id id,
-                         uint32_t node_id,
-                         op_type operation,
-                         hexagon_nn_padding_type padding,
-                         const hexagon_nn_input *inputs,
-                         uint32_t num_inputs,
-                         const hexagon_nn_output *outputs,
-                         uint32_t num_outputs) {
+int Controller::append_node(hexagon_nn_nn_id id, uint32_t node_id, op_type operation,
+                            hexagon_nn_padding_type padding, const hexagon_nn_input* inputs,
+                            uint32_t num_inputs, const hexagon_nn_output* outputs,
+                            uint32_t num_outputs) {
     if (mFn_append_node == nullptr) {
         return -1;
     }
 
-    CONTROLLER_CHECK(append_node, id, node_id, operation, padding, inputs, num_inputs,
-                     outputs, num_outputs);
+    CONTROLLER_CHECK(append_node, id, node_id, operation, padding, inputs, num_inputs, outputs,
+                     num_outputs);
 
     return 0;
 }
 
-int Controller::append_const_node(hexagon_nn_nn_id id,
-                               uint32_t node_id,
-                               uint32_t batches,
-                               uint32_t height,
-                               uint32_t width,
-                               uint32_t depth,
-                               const uint8_t *data,
-                               uint32_t data_len) {
+int Controller::append_const_node(hexagon_nn_nn_id id, uint32_t node_id, uint32_t batches,
+                                  uint32_t height, uint32_t width, uint32_t depth,
+                                  const uint8_t* data, uint32_t data_len) {
     if (mFn_append_const_node == nullptr) {
         return -1;
     }
 
-    CONTROLLER_CHECK(append_const_node, id, node_id, batches, height, width, depth,
-                     data, data_len);
+    CONTROLLER_CHECK(append_const_node, id, node_id, batches, height, width, depth, data, data_len);
 
     return 0;
 }
 
-int Controller::execute_new(hexagon_nn_nn_id id,
-                         const hexagon_nn_tensordef *inputs,
-                         uint32_t n_inputs,
-                         hexagon_nn_tensordef *outputs,
-                         uint32_t n_outputs) {
+int Controller::execute_new(hexagon_nn_nn_id id, const hexagon_nn_tensordef* inputs,
+                            uint32_t n_inputs, hexagon_nn_tensordef* outputs, uint32_t n_outputs) {
     if (mFn_execute_new == nullptr) {
         return -1;
     }
@@ -197,20 +185,11 @@ int Controller::execute_new(hexagon_nn_nn_id id,
     return 0;
 }
 
-int Controller::execute(hexagon_nn_nn_id id,
-                     uint32_t batches_in,
-                     uint32_t height_in,
-                     uint32_t width_in,
-                     uint32_t depth_in,
-                     const uint8_t *data_in,
-                     uint32_t data_len_in,
-                     uint32_t *batches_out,
-                     uint32_t *height_out,
-                     uint32_t *width_out,
-                     uint32_t *depth_out,
-                     uint8_t *data_out,
-                     uint32_t data_out_max,
-                     uint32_t *data_out_size) {
+int Controller::execute(hexagon_nn_nn_id id, uint32_t batches_in, uint32_t height_in,
+                        uint32_t width_in, uint32_t depth_in, const uint8_t* data_in,
+                        uint32_t data_len_in, uint32_t* batches_out, uint32_t* height_out,
+                        uint32_t* width_out, uint32_t* depth_out, uint8_t* data_out,
+                        uint32_t data_out_max, uint32_t* data_out_size) {
     if (mFn_execute == nullptr) {
         return -1;
     }
@@ -232,10 +211,8 @@ int Controller::teardown(hexagon_nn_nn_id id) {
     return 0;
 }
 
-int Controller::get_perfinfo(hexagon_nn_nn_id id,
-                          hexagon_nn_perfinfo *info_out,
-                          unsigned int info_out_len,
-                          unsigned int *n_items_out) {
+int Controller::get_perfinfo(hexagon_nn_nn_id id, hexagon_nn_perfinfo* info_out,
+                             unsigned int info_out_len, unsigned int* n_items_out) {
     if (mFn_get_perfinfo == nullptr) {
         return -1;
     }
@@ -255,7 +232,7 @@ int Controller::reset_perfinfo(hexagon_nn_nn_id id, uint32_t event) {
     return 0;
 }
 
-int Controller::version(int *ver) {
+int Controller::version(int* ver) {
     if (mFn_version == nullptr) {
         return -1;
     }
@@ -265,9 +242,8 @@ int Controller::version(int *ver) {
     return 0;
 }
 
-int Controller::last_execution_cycles(hexagon_nn_nn_id id,
-                                   unsigned int *cycles_lo,
-                                   unsigned int *cycles_hi) {
+int Controller::last_execution_cycles(hexagon_nn_nn_id id, unsigned int* cycles_lo,
+                                      unsigned int* cycles_hi) {
     if (mFn_last_execution_cycles == nullptr) {
         return -1;
     }
@@ -277,7 +253,7 @@ int Controller::last_execution_cycles(hexagon_nn_nn_id id,
     return 0;
 }
 
-int Controller::GetHexagonBinaryVersion(int *ver) {
+int Controller::GetHexagonBinaryVersion(int* ver) {
     if (mFn_GetHexagonBinaryVersion == nullptr) {
         return -1;
     }
@@ -287,7 +263,7 @@ int Controller::GetHexagonBinaryVersion(int *ver) {
     return 0;
 }
 
-int Controller::PrintLog(const uint8_t *data_in, unsigned int data_in_len) {
+int Controller::PrintLog(const uint8_t* data_in, unsigned int data_in_len) {
     if (mFn_PrintLog == nullptr) {
         return -1;
     }
@@ -297,7 +273,7 @@ int Controller::PrintLog(const uint8_t *data_in, unsigned int data_in_len) {
     return 0;
 }
 
-int Controller::op_name_to_id(const char *name, unsigned int *id) {
+int Controller::op_name_to_id(const char* name, unsigned int* id) {
     if (mFn_op_name_to_id == nullptr) {
         return -1;
     }
@@ -307,7 +283,7 @@ int Controller::op_name_to_id(const char *name, unsigned int *id) {
     return 0;
 }
 
-int Controller::op_id_to_name(const unsigned int id, char *name, int name_len) {
+int Controller::op_id_to_name(const unsigned int id, char* name, int name_len) {
     if (mFn_op_id_to_name == nullptr) {
         return -1;
     }
@@ -367,9 +343,9 @@ int Controller::slow() {
     return 0;
 }
 
-} // namespace hexagon
-} // namespace implementation
-} // namespace V1_0
-} // namespace neuralnetworks
-} // namespace hardware
-} // namespace android
+}  // namespace hexagon
+}  // namespace implementation
+}  // namespace V1_0
+}  // namespace neuralnetworks
+}  // namespace hardware
+}  // namespace android

@@ -17,14 +17,14 @@
 #define LOG_TAG "android.hardware.neuralnetworks@1.0-impl-hvx"
 
 #include "Device.h"
+#include <android-base/logging.h>
+#include <memory>
+#include <mutex>
+#include <thread>
 #include "HexagonModel.h"
 #include "HexagonUtils.h"
 #include "PreparedModel.h"
 #include "ValidateHal.h"
-#include <android-base/logging.h>
-#include <mutex>
-#include <thread>
-#include <memory>
 
 namespace android {
 namespace hardware {
@@ -38,7 +38,10 @@ Device::~Device() {}
 
 static std::once_flag configure_nnlib;
 static void configureHexagon() {
-    std::call_once(configure_nnlib, [](){ hexagon::Controller::getInstance().config(); hexagon::Controller::getInstance().boost(100); });
+    std::call_once(configure_nnlib, []() {
+        hexagon::Controller::getInstance().config();
+        hexagon::Controller::getInstance().boost(100);
+    });
 }
 
 Return<void> Device::getCapabilities(getCapabilities_cb _hidl_cb) {
@@ -47,22 +50,19 @@ Return<void> Device::getCapabilities(getCapabilities_cb _hidl_cb) {
     // These numbers are approximations for this release.
     // TODO Change with the actual number.
     PerformanceInfo float32Performance = {
-        .execTime   = 30.0f,
-        .powerUsage = 2.0f,
+        .execTime = 30.0f, .powerUsage = 2.0f,
     };
 
     PerformanceInfo quantized8Performance = {
-        .execTime   = 0.7f,
-        .powerUsage = 0.7f,
+        .execTime = 0.7f, .powerUsage = 0.7f,
     };
 
     Capabilities capabilities = {
-        .float32Performance    = float32Performance,
-        .quantized8Performance = quantized8Performance,
+        .float32Performance = float32Performance, .quantized8Performance = quantized8Performance,
     };
 
     ErrorStatus status =
-            hexagon::isHexagonAvailable() ? ErrorStatus::NONE : ErrorStatus::DEVICE_UNAVAILABLE;
+        hexagon::isHexagonAvailable() ? ErrorStatus::NONE : ErrorStatus::DEVICE_UNAVAILABLE;
 
     _hidl_cb(status, capabilities);
     return Void();
@@ -93,8 +93,7 @@ void Device::asyncPrepare(const Model& model, const sp<IPreparedModelCallback>& 
 
     if (hexagonModel->prepare()) {
         callback->notify(ErrorStatus::NONE, new PreparedModel(model, hexagonModel));
-    }
-    else {
+    } else {
         callback->notify(ErrorStatus::GENERAL_FAILURE, nullptr);
     }
 }
@@ -126,7 +125,7 @@ Return<ErrorStatus> Device::prepareModel(const Model& model,
 Return<DeviceStatus> Device::getStatus() {
     configureHexagon();
     mCurrentStatus =
-            hexagon::isHexagonAvailable() ? DeviceStatus::AVAILABLE : DeviceStatus::OFFLINE;
+        hexagon::isHexagonAvailable() ? DeviceStatus::AVAILABLE : DeviceStatus::OFFLINE;
     return mCurrentStatus;
 }
 

@@ -17,12 +17,12 @@
 #ifndef ANDROID_HARDWARE_NEURALNETWORKS_V1_0_PREPAREDMODEL_H
 #define ANDROID_HARDWARE_NEURALNETWORKS_V1_0_PREPAREDMODEL_H
 
-#include "HexagonModel.h"
-#include "hexagon_nn_controller/hexagon_nn_controller.h"
 #include <android/hardware/neuralnetworks/1.0/IPreparedModel.h>
 #include <hidl/MQDescriptor.h>
 #include <hidl/Status.h>
 #include <memory>
+#include "HexagonModel.h"
+#include "hexagon_nn_controller/hexagon_nn_controller.h"
 
 namespace android {
 namespace hardware {
@@ -30,23 +30,23 @@ namespace neuralnetworks {
 namespace V1_0 {
 namespace implementation {
 
+using ::android::sp;
 using ::android::hardware::hidl_array;
 using ::android::hardware::hidl_memory;
 using ::android::hardware::hidl_string;
 using ::android::hardware::hidl_vec;
 using ::android::hardware::Return;
 using ::android::hardware::Void;
-using ::android::sp;
 
 struct PreparedModel : public IPreparedModel {
-private:
-    PreparedModel()                                = delete;
-    PreparedModel(const PreparedModel&)            = delete;
-    PreparedModel(PreparedModel&&)                 = delete;
+   private:
+    PreparedModel() = delete;
+    PreparedModel(const PreparedModel&) = delete;
+    PreparedModel(PreparedModel&&) = delete;
     PreparedModel& operator=(const PreparedModel&) = delete;
-    PreparedModel& operator=(PreparedModel&&)      = delete;
+    PreparedModel& operator=(PreparedModel&&) = delete;
 
-public:
+   public:
     PreparedModel(const Model& neuralNetworksModel,
                   const std::shared_ptr<hexagon::Model>& hexagonModel);
     ~PreparedModel() override;
@@ -55,7 +55,7 @@ public:
     Return<ErrorStatus> execute(const Request& request,
                                 const sp<IExecutionCallback>& callback) override;
 
-private:
+   private:
     Model mNeuralNetworksModel;
     std::shared_ptr<hexagon::Model> mHexagonModel;
 };

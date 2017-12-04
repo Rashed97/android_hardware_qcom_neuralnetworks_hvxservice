@@ -17,9 +17,9 @@
 #define LOG_TAG "android.hardware.neuralnetworks@1.0-impl-hvx"
 
 #include "HexagonModel.h"
-#include "HexagonOperations.h"
 #include <numeric>
 #include <unordered_set>
+#include "HexagonOperations.h"
 
 namespace android {
 namespace hardware {
@@ -34,13 +34,13 @@ static std::vector<OperandInfo> getOperandsInfo(const NeuralnetworksModel& model
     for (size_t i = 0; i < model.operands.size(); ++i) {
         const Operand& operand = model.operands[i];
         info[i] = {
-            .type       = operand.type,
+            .type = operand.type,
             .dimensions = operand.dimensions,
-            .scale      = operand.scale,
-            .zeroPoint  = operand.zeroPoint,
-            .lifetime   = operand.lifetime,
-            .buffer     = const_cast<uint8_t*>(getData(operand, model.operandValues, pools)),
-            .length     = operand.location.length,
+            .scale = operand.scale,
+            .zeroPoint = operand.zeroPoint,
+            .lifetime = operand.lifetime,
+            .buffer = const_cast<uint8_t*>(getData(operand, model.operandValues, pools)),
+            .length = operand.location.length,
         };
     }
     return info;
@@ -52,8 +52,8 @@ Model::Model(const NeuralnetworksModel& model) : mGraphId(0), mNodeCount(0), mCo
     std::for_each(mPools.begin(), mPools.end(), [](RunTimePoolInfo& mem) { mem.update(); });
 
     mOperations = model.operations;
-    mInputs     = model.inputIndexes;
-    mOutputs    = model.outputIndexes;
+    mInputs = model.inputIndexes;
+    mOutputs = model.outputIndexes;
 }
 
 Model::Model(Model&& other) {
@@ -62,17 +62,17 @@ Model::Model(Model&& other) {
 
 Model& Model::operator=(Model&& other) {
     if (this != &other) {
-        mNodeCount       = other.mNodeCount;
-        mGraphId         = other.mGraphId;
-        mCompiled        = other.mCompiled;
-        mOperands        = std::move(other.mOperands);
-        mOperations      = std::move(other.mOperations);
-        mInputs          = std::move(other.mInputs);
-        mOutputs         = std::move(other.mOutputs);
-        mPools           = std::move(other.mPools);
+        mNodeCount = other.mNodeCount;
+        mGraphId = other.mGraphId;
+        mCompiled = other.mCompiled;
+        mOperands = std::move(other.mOperands);
+        mOperations = std::move(other.mOperations);
+        mInputs = std::move(other.mInputs);
+        mOutputs = std::move(other.mOutputs);
+        mPools = std::move(other.mPools);
         other.mNodeCount = 0;
-        other.mGraphId   = {};
-        other.mCompiled  = false;
+        other.mGraphId = {};
+        other.mCompiled = false;
     }
     return *this;
 }
@@ -82,17 +82,17 @@ Model::~Model() {
 }
 
 std::string Model::getLog() {
-    char buffer[16*1024];
+    char buffer[16 * 1024];
     int err = hexagon::Controller::getInstance().getlog(
-            mGraphId, reinterpret_cast<uint8_t*>(buffer), sizeof(buffer));
+        mGraphId, reinterpret_cast<uint8_t*>(buffer), sizeof(buffer));
     HEXAGON_SOFT_ASSERT_EQ(0, err, "failed getLog");
     return buffer;
 }
 
 std::string Model::getGraph() {
-    char buffer[16*1024];
+    char buffer[16 * 1024];
     int err = hexagon::Controller::getInstance().snpprint(
-            mGraphId, reinterpret_cast<uint8_t*>(buffer), sizeof(buffer));
+        mGraphId, reinterpret_cast<uint8_t*>(buffer), sizeof(buffer));
     HEXAGON_SOFT_ASSERT_EQ(0, err, "failed getGraph");
     return buffer;
 }
@@ -107,34 +107,34 @@ const int32_t* Model::getPointer(uint32_t operand) {
 
 Shape Model::getShape(uint32_t operand) {
     return {
-        .type       = mOperands[operand].type,
+        .type = mOperands[operand].type,
         .dimensions = mOperands[operand].dimensions,
-        .scale      = mOperands[operand].scale,
-        .offset     = mOperands[operand].zeroPoint,
+        .scale = mOperands[operand].scale,
+        .offset = mOperands[operand].zeroPoint,
     };
 }
 
 bool Model::setShape(uint32_t operand, const Shape& shape) {
     const hexagon_nn_output& output = mOperands[operand].hexagon_output;
     HEXAGON_SOFT_ASSERT_EQ(output, hexagon_nn_output{}, "Output has already been set");
-    //mOperands[operand].type       = shape.type;
+    // mOperands[operand].type       = shape.type;
     mOperands[operand].dimensions = shape.dimensions;
-    //mOperands[operand].scale      = shape.scale;
-    //mOperands[operand].zeroPoint  = shape.offset;
+    // mOperands[operand].scale      = shape.scale;
+    // mOperands[operand].zeroPoint  = shape.offset;
     return true;
 }
 
 bool Model::isConstant(uint32_t operand) {
     OperandLifeTime lifetime = mOperands[operand].lifetime;
     return lifetime == OperandLifeTime::CONSTANT_COPY ||
-            lifetime == OperandLifeTime::CONSTANT_REFERENCE;
+           lifetime == OperandLifeTime::CONSTANT_REFERENCE;
 }
 
 hexagon_nn_input Model::createTensorInternal(uint32_t B, uint32_t H, uint32_t W, uint32_t D,
                                              const uint8_t* ptr, size_t size) {
     uint32_t node = getNextNode();
-    bool success = hexagon::Controller::getInstance().append_const_node(
-            mGraphId, node, B, H, W, D, ptr, size) == 0;
+    bool success = hexagon::Controller::getInstance().append_const_node(mGraphId, node, B, H, W, D,
+                                                                        ptr, size) == 0;
     HEXAGON_SOFT_ASSERT(success, "Failed to create tensor");
     return {.src_id = node, .output_idx = 0};
 }
@@ -148,8 +148,8 @@ hexagon_nn_input Model::addOperand(uint32_t operandIndex) {
     const OperandInfo& operand = mOperands[operandIndex];
     std::vector<uint32_t> dims = getAlignedDimensions(operand.dimensions, 4);
     HEXAGON_SOFT_ASSERT_NE(0ul, dims.size(), "Rank must be at most 4");
-    hexagon_nn_input result = createTensorInternal(dims[0], dims[1], dims[2], dims[3],
-                                                   operand.buffer, operand.length);
+    hexagon_nn_input result =
+        createTensorInternal(dims[0], dims[1], dims[2], dims[3], operand.buffer, operand.length);
     HEXAGON_SOFT_ASSERT_NE(hexagon_nn_input{}, result, "Failed to add operand");
     return result;
 }
@@ -165,9 +165,10 @@ const hexagon_nn_input& Model::getTensor(uint32_t operand) {
 const hexagon_nn_input& Model::getQuantizationMin(uint32_t operand) {
     OperandInfo& operandInfo = mOperands[operand];
     if (operandInfo.hexagon_input_min == hexagon_nn_input{}) {
-        float real_value = operandInfo.type == OperandType::TENSOR_QUANT8_ASYMM ?
-                (std::numeric_limits<uint8_t>::min() - operandInfo.zeroPoint) * operandInfo.scale :
-                std::numeric_limits<uint32_t>::min() * operandInfo.scale;
+        float real_value =
+            operandInfo.type == OperandType::TENSOR_QUANT8_ASYMM
+                ? (std::numeric_limits<uint8_t>::min() - operandInfo.zeroPoint) * operandInfo.scale
+                : std::numeric_limits<uint32_t>::min() * operandInfo.scale;
         operandInfo.hexagon_input_min = createValues<float>({real_value});
     }
     return operandInfo.hexagon_input_min;
@@ -176,9 +177,10 @@ const hexagon_nn_input& Model::getQuantizationMin(uint32_t operand) {
 const hexagon_nn_input& Model::getQuantizationMax(uint32_t operand) {
     OperandInfo& operandInfo = mOperands[operand];
     if (operandInfo.hexagon_input_max == hexagon_nn_input{}) {
-        float real_value = operandInfo.type == OperandType::TENSOR_QUANT8_ASYMM ?
-                (std::numeric_limits<uint8_t>::max() - operandInfo.zeroPoint) * operandInfo.scale :
-                std::numeric_limits<uint32_t>::max() * operandInfo.scale;
+        float real_value =
+            operandInfo.type == OperandType::TENSOR_QUANT8_ASYMM
+                ? (std::numeric_limits<uint8_t>::max() - operandInfo.zeroPoint) * operandInfo.scale
+                : std::numeric_limits<uint32_t>::max() * operandInfo.scale;
         operandInfo.hexagon_input_max = createValues<float>({real_value});
     }
     return operandInfo.hexagon_input_max;
@@ -201,16 +203,19 @@ hexagon_nn_input Model::createConvFilterTensor(uint32_t operand) {
     HEXAGON_SOFT_ASSERT_NE(0ul, dims.size(), "Need at most 4 dimensions");
     // NHWC --> HWCN
     if (getShape(operand).type == OperandType::TENSOR_FLOAT32) {
-        std::vector<float> transposed = transpose<float>(dims[0], dims[1]*dims[2]*dims[3],
-                reinterpret_cast<const float*>(operandInfo.buffer));
+        std::vector<float> transposed =
+            transpose<float>(dims[0], dims[1] * dims[2] * dims[3],
+                             reinterpret_cast<const float*>(operandInfo.buffer));
         return createTensorInternal(dims[1], dims[2], dims[3], dims[0],
-                reinterpret_cast<const uint8_t*>(transposed.data()), operandInfo.length);
-    }
-    else {
-        std::vector<uint8_t> transposed = transpose<uint8_t>(dims[0], dims[1]*dims[2]*dims[3],
-                reinterpret_cast<const uint8_t*>(operandInfo.buffer));
+                                    reinterpret_cast<const uint8_t*>(transposed.data()),
+                                    operandInfo.length);
+    } else {
+        std::vector<uint8_t> transposed =
+            transpose<uint8_t>(dims[0], dims[1] * dims[2] * dims[3],
+                               reinterpret_cast<const uint8_t*>(operandInfo.buffer));
         return createTensorInternal(dims[1], dims[2], dims[3], dims[0],
-                reinterpret_cast<const uint8_t*>(transposed.data()), operandInfo.length);
+                                    reinterpret_cast<const uint8_t*>(transposed.data()),
+                                    operandInfo.length);
     }
 }
 
@@ -220,8 +225,7 @@ hexagon_nn_input Model::createDepthwiseFilterTensor(uint32_t operand, int32_t de
     HEXAGON_SOFT_ASSERT_NE(0ul, dims.size(), "Need at most 4 dimensions");
     // NHWC --> HWCN
     return createTensorInternal(dims[1], dims[2], dims[3] / depth_multiplier,
-                                dims[0] * depth_multiplier,
-                                operandInfo.buffer, operandInfo.length);
+                                dims[0] * depth_multiplier, operandInfo.buffer, operandInfo.length);
 }
 
 hexagon_nn_input Model::createFullyConnectedWeightTensor(uint32_t operand) {
@@ -232,16 +236,17 @@ hexagon_nn_input Model::createFullyConnectedWeightTensor(uint32_t operand) {
     uint32_t num_units = dims[0] * dims[1] * dims[2];
     uint32_t input_size = dims[3];
     if (getShape(operand).type == OperandType::TENSOR_FLOAT32) {
-        std::vector<float> transposed = transpose<float>(num_units, input_size,
-                reinterpret_cast<const float*>(operandInfo.buffer));
+        std::vector<float> transposed = transpose<float>(
+            num_units, input_size, reinterpret_cast<const float*>(operandInfo.buffer));
         return createTensorInternal(1, 1, input_size, num_units,
-                reinterpret_cast<const uint8_t*>(transposed.data()), operandInfo.length);
-    }
-    else {
-        std::vector<uint8_t> transposed = transpose<uint8_t>(num_units, input_size,
-                reinterpret_cast<const uint8_t*>(operandInfo.buffer));
+                                    reinterpret_cast<const uint8_t*>(transposed.data()),
+                                    operandInfo.length);
+    } else {
+        std::vector<uint8_t> transposed = transpose<uint8_t>(
+            num_units, input_size, reinterpret_cast<const uint8_t*>(operandInfo.buffer));
         return createTensorInternal(1, 1, input_size, num_units,
-                reinterpret_cast<const uint8_t*>(transposed.data()), operandInfo.length);
+                                    reinterpret_cast<const uint8_t*>(transposed.data()),
+                                    operandInfo.length);
     }
 }
 
@@ -279,8 +284,11 @@ uint32_t Model::addOperationInternal(op_type op, hexagon_nn_padding_type pad,
     HEXAGON_SOFT_ASSERT(verifyOperationOutputs(outputs),
                         "error adding operation: one or more outputs is invalid");
     uint32_t node = getNextNode();
-    return hexagon::Controller::getInstance().append_node(mGraphId, node, op, pad,
-            inputs.data(), inputs.size(), outputs.data(), outputs.size()) == 0 ? node : 0;
+    return hexagon::Controller::getInstance().append_node(mGraphId, node, op, pad, inputs.data(),
+                                                          inputs.size(), outputs.data(),
+                                                          outputs.size()) == 0
+               ? node
+               : 0;
 }
 
 std::vector<hexagon_nn_output> Model::getHexagonOutputs(const std::vector<uint32_t>& operands) {
@@ -370,7 +378,8 @@ bool Model::addQuant8OperationWithActivation(op_type op, hexagon_nn_padding_type
     HEXAGON_SOFT_ASSERT_NE(0, node, "Error adding base operation");
 
     std::vector<hexagon_nn_input> buffer_in = {{.src_id = node, .output_idx = 0},
-            {.src_id = node, .output_idx = 1}, {.src_id = node, .output_idx = 2}};
+                                               {.src_id = node, .output_idx = 1},
+                                               {.src_id = node, .output_idx = 2}};
     buffer_in.insert(buffer_in.end(), actArgs.begin(), actArgs.end());
     node = addOperationInternal(activation, NN_PAD_NA, buffer_in, outs);
     HEXAGON_SOFT_ASSERT_NE(0, node, "Error adding activation operation");
@@ -378,10 +387,8 @@ bool Model::addQuant8OperationWithActivation(op_type op, hexagon_nn_padding_type
     return registerHexagonInputs(outputs, node);
 }
 
-bool Model::addFusedFloatOperation(op_type op,
-                                   hexagon_nn_padding_type pad,
-                                   const hexagon_nn_input& bias,
-                                   op_type activation,
+bool Model::addFusedFloatOperation(op_type op, hexagon_nn_padding_type pad,
+                                   const hexagon_nn_input& bias, op_type activation,
                                    const std::vector<hexagon_nn_input>& inputs,
                                    const std::vector<uint32_t>& outputs) {
     HEXAGON_SOFT_ASSERT_EQ(1, outputs.size(), "addFusedFloatOperation requires 1 output");
@@ -406,10 +413,8 @@ bool Model::addFusedFloatOperation(op_type op,
     return registerHexagonInputs(outputs, node);
 }
 
-bool Model::addFusedQuant8Operation(op_type op,
-                                    hexagon_nn_padding_type pad,
-                                    const std::vector<hexagon_nn_input>& bias,
-                                    op_type activation,
+bool Model::addFusedQuant8Operation(op_type op, hexagon_nn_padding_type pad,
+                                    const std::vector<hexagon_nn_input>& bias, op_type activation,
                                     const std::vector<hexagon_nn_input>& inputs,
                                     const std::vector<uint32_t>& outputs) {
     HEXAGON_SOFT_ASSERT_EQ(1, outputs.size(), "addFusedQuant8Operation requires 1 output");
@@ -418,10 +423,10 @@ bool Model::addFusedQuant8Operation(op_type op,
     const hexagon_nn_input& new_max = getQuantizationMax(outputs[0]);
     uint32_t node;
 
-    hexagon_nn_output tensor_out8 = make_hexagon_nn_output(mOperands[outputs[0]].dimensions,
-                                                           sizeof(uint8_t));
-    hexagon_nn_output tensor_out32 = make_hexagon_nn_output(mOperands[outputs[0]].dimensions,
-                                                            sizeof(int32_t));
+    hexagon_nn_output tensor_out8 =
+        make_hexagon_nn_output(mOperands[outputs[0]].dimensions, sizeof(uint8_t));
+    hexagon_nn_output tensor_out32 =
+        make_hexagon_nn_output(mOperands[outputs[0]].dimensions, sizeof(int32_t));
     hexagon_nn_output scalar_out32 = make_hexagon_nn_output({1, 1, 1, 1}, sizeof(float));
 
     std::vector<hexagon_nn_output> out8 = {tensor_out8, scalar_out32, scalar_out32};
@@ -430,14 +435,15 @@ bool Model::addFusedQuant8Operation(op_type op,
     // base operation
     node = addOperationInternal(op, pad, inputs, out32);
     HEXAGON_SOFT_ASSERT_NE(0, node, "Error adding base operation");
-    hexagon_nn_input previous     = {.src_id = node, .output_idx = 0};
+    hexagon_nn_input previous = {.src_id = node, .output_idx = 0};
     hexagon_nn_input previous_min = {.src_id = node, .output_idx = 1};
     hexagon_nn_input previous_max = {.src_id = node, .output_idx = 2};
 
     // add bias
     if (bias.size() == 3) {
-        node = addOperationInternal(OP_QuantizedBiasAdd_32p32to32, NN_PAD_NA,
-                {previous, bias[0], previous_min, previous_max, bias[1], bias[2]}, out32);
+        node = addOperationInternal(
+            OP_QuantizedBiasAdd_32p32to32, NN_PAD_NA,
+            {previous, bias[0], previous_min, previous_max, bias[1], bias[2]}, out32);
         HEXAGON_SOFT_ASSERT_NE(0, node, "Error adding bias operation");
         previous.src_id = node;
         previous_min.src_id = node;
@@ -503,11 +509,11 @@ bool Model::addOperations() {
         OperationType operationType = operation.type;
         OperandType operandType = mOperands[operation.inputs[0]].type;
         OperationTuple opTuple = std::make_pair(operationType, operandType);
-        HEXAGON_SOFT_ASSERT(getOperationPrepareTable().find(opTuple) !=
-                            getOperationPrepareTable().end(),
-                            "Operation not found");
-        bool success = getOperationPrepareTable()[opTuple](
-                operation.inputs, operation.outputs, this);
+        HEXAGON_SOFT_ASSERT(
+            getOperationPrepareTable().find(opTuple) != getOperationPrepareTable().end(),
+            "Operation not found");
+        bool success =
+            getOperationPrepareTable()[opTuple](operation.inputs, operation.outputs, this);
         HEXAGON_SOFT_ASSERT(success, "error adding operation");
     }
     return true;
@@ -550,8 +556,7 @@ std::vector<bool> Model::supportedOperations() {
         auto entry = getOperationCheckTable().find(operation.type);
         if (entry != getOperationCheckTable().end()) {
             supported[i] = entry->second(operation.inputs, operation.outputs, this);
-        }
-        else {
+        } else {
             supported[i] = false;
         }
     }
@@ -580,14 +585,14 @@ bool Model::prepare() {
 static hexagon_nn_tensordef convertToTensordef(const OperandInfo& operand) {
     std::vector<uint32_t> dimensions = getAlignedDimensions(operand.dimensions, 4);
     return {
-        .batches        = dimensions[0],
-        .height         = dimensions[1],
-        .width          = dimensions[2],
-        .depth          = dimensions[3],
-        .data           = operand.buffer,
-        .dataLen        = static_cast<int32_t>(operand.length),
-        .data_valid_len = operand.length, // unused?
-        .unused         = 0,
+        .batches = dimensions[0],
+        .height = dimensions[1],
+        .width = dimensions[2],
+        .depth = dimensions[3],
+        .data = operand.buffer,
+        .dataLen = static_cast<int32_t>(operand.length),
+        .data_valid_len = operand.length,  // unused?
+        .unused = 0,
     };
 }
 
@@ -634,9 +639,8 @@ bool Model::execute(const Request& request) {
     }
 
     // execute model
-    int err = hexagon::Controller::getInstance().execute_new(mGraphId, inputs.data(),
-                                                             inputs.size(), outputs.data(),
-                                                             outputs.size());
+    int err = hexagon::Controller::getInstance().execute_new(mGraphId, inputs.data(), inputs.size(),
+                                                             outputs.data(), outputs.size());
 
     std::for_each(pools.begin(), pools.end(), [](RunTimePoolInfo& pool) { pool.update(); });
 
@@ -645,9 +649,9 @@ bool Model::execute(const Request& request) {
     return err == 0;
 }
 
-} // namespace hexagon
-} // namespace implementation
-} // namespace V1_0
-} // namespace neuralnetworks
-} // namespace hardware
-} // namespace android
+}  // namespace hexagon
+}  // namespace implementation
+}  // namespace V1_0
+}  // namespace neuralnetworks
+}  // namespace hardware
+}  // namespace android

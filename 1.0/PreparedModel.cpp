@@ -16,11 +16,11 @@
 
 #define LOG_TAG "android.hardware.neuralnetworks@1.0-impl-hvx"
 
-#include "HexagonUtils.h"
 #include "PreparedModel.h"
-#include "ValidateHal.h"
 #include <android-base/logging.h>
 #include <thread>
+#include "HexagonUtils.h"
+#include "ValidateHal.h"
 
 namespace android {
 namespace hardware {
@@ -29,15 +29,15 @@ namespace V1_0 {
 namespace implementation {
 
 PreparedModel::PreparedModel(const Model& neuralNetworksModel,
-                             const std::shared_ptr<hexagon::Model>& hexagonModel) :
-        mNeuralNetworksModel(neuralNetworksModel), mHexagonModel(hexagonModel) {}
+                             const std::shared_ptr<hexagon::Model>& hexagonModel)
+    : mNeuralNetworksModel(neuralNetworksModel), mHexagonModel(hexagonModel) {}
 
 PreparedModel::~PreparedModel() {}
 
 static void asyncExecute(const std::shared_ptr<hexagon::Model>& model, const Request& request,
                          const sp<IExecutionCallback>& callback) {
-    ErrorStatus status = model->execute(request) == true ?
-            ErrorStatus::NONE : ErrorStatus::GENERAL_FAILURE;
+    ErrorStatus status =
+        model->execute(request) == true ? ErrorStatus::NONE : ErrorStatus::GENERAL_FAILURE;
     callback->notify(status);
 }
 
