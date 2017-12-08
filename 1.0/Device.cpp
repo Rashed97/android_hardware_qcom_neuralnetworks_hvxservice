@@ -91,10 +91,14 @@ Return<void> Device::getSupportedOperations(const Model& model,
 void Device::asyncPrepare(const Model& model, const sp<IPreparedModelCallback>& callback) {
     std::shared_ptr<hexagon::Model> hexagonModel = std::make_shared<hexagon::Model>(model);
 
+    Return<void> ret;
     if (hexagonModel->prepare()) {
-        callback->notify(ErrorStatus::NONE, new PreparedModel(model, hexagonModel));
+        ret = callback->notify(ErrorStatus::NONE, new PreparedModel(model, hexagonModel));
     } else {
-        callback->notify(ErrorStatus::GENERAL_FAILURE, nullptr);
+        ret = callback->notify(ErrorStatus::GENERAL_FAILURE, nullptr);
+    }
+    if (!ret.isOk()) {
+        LOG(ERROR) << "Error in callback's return type: " << ret.description();
     }
 }
 

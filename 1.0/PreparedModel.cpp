@@ -38,7 +38,10 @@ static void asyncExecute(const std::shared_ptr<hexagon::Model>& model, const Req
                          const sp<IExecutionCallback>& callback) {
     ErrorStatus status =
         model->execute(request) == true ? ErrorStatus::NONE : ErrorStatus::GENERAL_FAILURE;
-    callback->notify(status);
+    Return<void> ret = callback->notify(status);
+    if (!ret.isOk()) {
+        LOG(ERROR) << "Error in callback's return type: " << ret.description();
+    }
 }
 
 Return<ErrorStatus> PreparedModel::execute(const Request& request,
@@ -47,12 +50,19 @@ Return<ErrorStatus> PreparedModel::execute(const Request& request,
         LOG(ERROR) << "invalid callback passed to execute";
         return ErrorStatus::INVALID_ARGUMENT;
     }
+
     if (!nn::validateRequest(request, mNeuralNetworksModel)) {
-        callback->notify(ErrorStatus::INVALID_ARGUMENT);
+        Return<void> ret = callback->notify(ErrorStatus::INVALID_ARGUMENT);
+        if (!ret.isOk()) {
+            LOG(ERROR) << "Error in callback's return type: " << ret.description();
+        }
         return ErrorStatus::INVALID_ARGUMENT;
     }
     if (!hexagon::isHexagonAvailable()) {
-        callback->notify(ErrorStatus::DEVICE_UNAVAILABLE);
+        Return<void> ret = callback->notify(ErrorStatus::DEVICE_UNAVAILABLE);
+        if (!ret.isOk()) {
+            LOG(ERROR) << "Error in callback's return type: " << ret.description();
+        }
         return ErrorStatus::DEVICE_UNAVAILABLE;
     }
 

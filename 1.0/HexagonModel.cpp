@@ -574,10 +574,13 @@ bool Model::prepare() {
 
     if (!addInputs() || !addOperations() || !addOutputs()) {
         clearModel();
+        LOG(ERROR) << "Something went wrong. Clearing the model and aborting.";
         return false;
     }
 
     int err = hexagon::Controller::getInstance().prepare(mGraphId);
+
+    LOG(INFO) << "PrepareModel was " << (err == 0 ? "SUCCESSFUL" : "UNSUCCESSFUL");
 
     return err == 0;
 }
