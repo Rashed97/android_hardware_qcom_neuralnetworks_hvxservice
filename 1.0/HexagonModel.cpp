@@ -568,7 +568,8 @@ bool Model::prepare() {
         return false;
     }
 
-    mGraphId = hexagon::Controller::getInstance().init();
+    int err = hexagon::Controller::getInstance().init(&mGraphId);
+    HEXAGON_SOFT_ASSERT_EQ(0, err, "Hexagon could not allocate new graph");
     HEXAGON_SOFT_ASSERT_NE(0, mGraphId, "Hexagon could not allocate new graph");
     hexagon::Controller::getInstance().set_debug_level(mGraphId, 0);
 
@@ -578,7 +579,7 @@ bool Model::prepare() {
         return false;
     }
 
-    int err = hexagon::Controller::getInstance().prepare(mGraphId);
+    err = hexagon::Controller::getInstance().prepare(mGraphId);
 
     LOG(INFO) << "PrepareModel was " << (err == 0 ? "SUCCESSFUL" : "UNSUCCESSFUL");
 

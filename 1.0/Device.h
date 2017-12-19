@@ -51,8 +51,6 @@ struct Device : public IDevice {
     Return<DeviceStatus> getStatus() override;
 
    private:
-    void asyncPrepare(const Model& model, const sp<IPreparedModelCallback>& callback);
-
     DeviceStatus mCurrentStatus;
 };
 

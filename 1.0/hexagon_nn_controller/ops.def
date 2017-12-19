@@ -204,7 +204,7 @@ DEF_OP_WREF(QuantizedClamp_8)
 DEF_OP(Clamp_f)
 DEF_OP(QuantizeForTest_d32)
 DEF_OP(Close_d32)
-DEF_OP_WREF(QuantizedSub_8x8to8_d32)
+DEF_OP_WREF(QuantizedSub_8p8to8_d32)
 
 DEF_OP(InputSupernode_8x8p8to8_outd32)
 DEF_OP(QuantizedLRN_8_d32)
@@ -223,7 +223,21 @@ DEF_OP_WREF(AutoQuantize_d32)
 
 DEF_OP_WREF(QuantizedTanh_8_d32)
 DEF_OP_WREF(QuantizedSigmoid_8_d32)
+DEF_OP_WREF(QuantizedSoftmax_8_d32)
 
+#if 0
+DEF_OP_WREF(QuantizedL2Pool_8_d32)
+#endif
+
+DEF_OP(Gather_f)
+DEF_OP(Gather_int32)
+DEF_OP(Gather_8)
+DEF_OP(Table_f)
+DEF_OP(Table_int32)
+DEF_OP(Table_8)
+
+DEF_OP(FillPadding_8_d32)
+DEF_OP(QuantizedResizeBilinear_8_d32)
 #ifdef __SELF_DEF_OP_WREF
 #undef __SELF_DEF_OP_WREF
 #undef DEF_OP_WREF

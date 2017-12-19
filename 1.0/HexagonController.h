@@ -56,7 +56,7 @@ class Controller {
     static Controller& getInstance();
     bool resetNnlib();
 
-    hexagon_nn_nn_id init();
+    int init(hexagon_nn_nn_id* g);
 
     int getlog(hexagon_nn_nn_id id, unsigned char* buf, uint32_t length);
 

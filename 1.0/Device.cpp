@@ -88,7 +88,7 @@ Return<void> Device::getSupportedOperations(const Model& model,
     return Void();
 }
 
-void Device::asyncPrepare(const Model& model, const sp<IPreparedModelCallback>& callback) {
+static void asyncPrepare(const Model& model, const sp<IPreparedModelCallback>& callback) {
     std::shared_ptr<hexagon::Model> hexagonModel = std::make_shared<hexagon::Model>(model);
 
     Return<void> ret;

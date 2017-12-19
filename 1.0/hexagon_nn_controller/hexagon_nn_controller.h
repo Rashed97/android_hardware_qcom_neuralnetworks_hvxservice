@@ -71,7 +71,7 @@ typedef struct hexagon_nn_tensordef {
 
 // interface types
 
-typedef hexagon_nn_nn_id (*hexagon_nn_controller_init_fn)();
+typedef int (*hexagon_nn_controller_init_fn)(hexagon_nn_nn_id* g);
 
 typedef int (*hexagon_nn_controller_getlog_fn)(hexagon_nn_nn_id id, unsigned char* buf,
                                                unsigned int length);
