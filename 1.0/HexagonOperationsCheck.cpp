@@ -409,38 +409,82 @@ bool resize_bilinear(const std::vector<uint32_t>& ins, const std::vector<uint32_
 
 }  // namespace
 
-OperationCheckTable& getOperationCheckTable() {
-    static OperationCheckTable table = {
-        {OperationType::ADD, add},
-        {OperationType::AVERAGE_POOL_2D, average_pool_2d},
-        {OperationType::CONCATENATION, concatenation},
-        {OperationType::CONV_2D, conv_2d},
-        {OperationType::DEPTHWISE_CONV_2D, depthwise_conv_2d},
-        //      {OperationType::DEPTH_TO_SPACE,               depth_to_space              },
-        {OperationType::DEQUANTIZE, dequantize},
-        //      {OperationType::EMBEDDING_LOOKUP,             embedding_lookup            },
-        //      {OperationType::FLOOR,                        floor                       },
-        {OperationType::FULLY_CONNECTED, fully_connected},
-        //      {OperationType::HASHTABLE_LOOKUP,             hashtable_lookup            },
-        //      {OperationType::L2_NORMALIZATION,             l2_normalization            },
-        {OperationType::L2_POOL_2D, l2_pool_2d},
-        {OperationType::LOCAL_RESPONSE_NORMALIZATION, local_response_normalization},
-        {OperationType::LOGISTIC, logistic},
-        //      {OperationType::LSH_PROJECTION,               lsh_projection              },
-        //      {OperationType::LSTM,                         lstm                        },
-        {OperationType::MAX_POOL_2D, max_pool_2d},
-        {OperationType::MUL, mul},
-        {OperationType::RELU, relu},
-        {OperationType::RELU1, relu1},
-        {OperationType::RELU6, relu6},
-        {OperationType::RESHAPE, reshape},
-        {OperationType::RESIZE_BILINEAR, resize_bilinear},
-        //      {OperationType::RNN,                          rnn                         },
-        {OperationType::SOFTMAX, softmax},
-        //      {OperationType::SPACE_TO_DEPTH,               space_to_depth              },
-        //      {OperationType::SVDF,                         svdf                        },
-        {OperationType::TANH, tanh},
+OperationTable& getOperationCheckTable() {
+    static OperationTable table = {
+        // NOTE: the operations that are commented out via inline represent
+        // operations that are valid for the Android O NNAPI release, but are
+        // currently not implemented in HVX.
+
+        // -------------------------- 32-BIT FLOAT ----------------------------
+        // HVX is only performant when running on quantized values. Further, as
+        // an optimization, the current HVX driver will convert some floating
+        // point tensors into quantized values, perform the operation, and then
+        // convert them back to floating point. This results in a loss in
+        // precision causing some tests to fail. For these reasons, the FLOAT32
+        // operations are being temporarily disabled.
+        /*
+        {{OperationType::ADD, OperandType::TENSOR_FLOAT32}, add},
+        {{OperationType::AVERAGE_POOL_2D, OperandType::TENSOR_FLOAT32}, average_pool_2d},
+        {{OperationType::CONCATENATION, OperandType::TENSOR_FLOAT32}, concatenation},
+        {{OperationType::CONV_2D, OperandType::TENSOR_FLOAT32}, conv_2d},
+        {{OperationType::DEPTHWISE_CONV_2D, OperandType::TENSOR_FLOAT32}, depthwise_conv_2d},
+        //{{OperationType::DEPTH_TO_SPACE, OperandType::TENSOR_FLOAT32}, depth_to_space},
+        //{{OperationType::EMBEDDING_LOOKUP, OperandType::TENSOR_FLOAT32}, embedding_lookup},
+        //{{OperationType::FLOOR, OperandType::TENSOR_FLOAT32}, floor},
+        {{OperationType::FULLY_CONNECTED, OperandType::TENSOR_FLOAT32}, fully_connected},
+        //{{OperationType::HASHTABLE_LOOKUP, OperandType::TENSOR_FLOAT32}, hashtable_lookup},
+        //{{OperationType::L2_NORMALIZATION, OperandType::TENSOR_FLOAT32}, l2_normalization},
+        {{OperationType::L2_POOL_2D, OperandType::TENSOR_FLOAT32}, l2_pool_2d},
+        {{OperationType::LOCAL_RESPONSE_NORMALIZATION, OperandType::TENSOR_FLOAT32},
+          local_response_normalization},
+        {{OperationType::LOGISTIC, OperandType::TENSOR_FLOAT32}, logistic},
+        //{{OperationType::LSH_PROJECTION, OperandType::TENSOR_FLOAT32}, lsh_projection},
+        //{{OperationType::LSTM, OperandType::TENSOR_FLOAT32}, lstm },
+        {{OperationType::MAX_POOL_2D, OperandType::TENSOR_FLOAT32}, max_pool_2d},
+        {{OperationType::MUL, OperandType::TENSOR_FLOAT32}, mul},
+        {{OperationType::RELU, OperandType::TENSOR_FLOAT32}, relu},
+        {{OperationType::RELU1, OperandType::TENSOR_FLOAT32}, relu1},
+        {{OperationType::RELU6, OperandType::TENSOR_FLOAT32}, relu6},
+        {{OperationType::RESHAPE, OperandType::TENSOR_FLOAT32}, reshape},
+        {{OperationType::RESIZE_BILINEAR, OperandType::TENSOR_FLOAT32}, resize_bilinear},
+        //{{OperationType::RNN, OperandType::TENSOR_FLOAT32}, rnn},
+        {{OperationType::SOFTMAX, OperandType::TENSOR_FLOAT32}, softmax},
+        //{{OperationType::SPACE_TO_DEPTH, OperandType::TENSOR_FLOAT32}, space_to_depth},
+        //{{OperationType::SVDF, OperandType::TENSOR_FLOAT32}, svdf },
+        {{OperationType::TANH, OperandType::TENSOR_FLOAT32}, tanh},
+        */
+
+        // -------------------- QUANTIZED 8-BIT ASYMMETRICAL ------------------
+        {{OperationType::ADD, OperandType::TENSOR_QUANT8_ASYMM}, add},
+        {{OperationType::AVERAGE_POOL_2D, OperandType::TENSOR_QUANT8_ASYMM}, average_pool_2d},
+        {{OperationType::CONCATENATION, OperandType::TENSOR_QUANT8_ASYMM}, concatenation},
+        {{OperationType::CONV_2D, OperandType::TENSOR_QUANT8_ASYMM}, conv_2d},
+        {{OperationType::DEPTHWISE_CONV_2D, OperandType::TENSOR_QUANT8_ASYMM}, depthwise_conv_2d},
+        //{{OperationType::DEPTH_TO_SPACE, OperandType::TENSOR_QUANT8_ASYMM}, depth_to_space},
+        {{OperationType::DEQUANTIZE, OperandType::TENSOR_QUANT8_ASYMM}, dequantize},
+        //{{OperationType::EMBEDDING_LOOKUP, OperandType::TENSOR_QUANT8_ASYMM}, embedding_lookup},
+        {{OperationType::FULLY_CONNECTED, OperandType::TENSOR_QUANT8_ASYMM}, fully_connected},
+        //{{OperationType::HASHTABLE_LOOKUP, OperandType::TENSOR_QUANT8_ASYMM}, hashtable_lookup},
+        {{OperationType::LOGISTIC, OperandType::TENSOR_QUANT8_ASYMM}, logistic},
+        //{{OperationType::LSH_PROJECTION, OperandType::TENSOR_QUANT8_ASYMM}, lsh_projection},
+        {{OperationType::MAX_POOL_2D, OperandType::TENSOR_QUANT8_ASYMM}, max_pool_2d},
+        {{OperationType::MUL, OperandType::TENSOR_QUANT8_ASYMM}, mul},
+        {{OperationType::RELU, OperandType::TENSOR_QUANT8_ASYMM}, relu},
+        {{OperationType::RELU1, OperandType::TENSOR_QUANT8_ASYMM}, relu1},
+        {{OperationType::RELU6, OperandType::TENSOR_QUANT8_ASYMM}, relu6},
+        {{OperationType::RESHAPE, OperandType::TENSOR_QUANT8_ASYMM}, reshape},
+        {{OperationType::SOFTMAX, OperandType::TENSOR_QUANT8_ASYMM}, softmax},
+        //{{OperationType::SPACE_TO_DEPTH, OperandType::TENSOR_QUANT8_ASYMM}, space_to_depth},
     };
+
+    // The following functions are normally used by float32, but those
+    // operations have been temporarily disabled. Void explicitly marks them as
+    // unused, and prevents the compiler from throwing an error.
+    (void)l2_pool_2d;
+    (void)local_response_normalization;
+    (void)tanh;
+    (void)resize_bilinear;
+
     return table;
 }
 

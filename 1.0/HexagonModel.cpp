@@ -507,7 +507,12 @@ bool Model::addInputs() {
 bool Model::addOperations() {
     for (const Operation& operation : mOperations) {
         OperationType operationType = operation.type;
+
+        // For now, the operation type is always the same as its first operand
+        // parameter. If this changes in the future, this line of code will need
+        // to be updated.
         OperandType operandType = mOperands[operation.inputs[0]].type;
+
         OperationTuple opTuple = std::make_pair(operationType, operandType);
         HEXAGON_SOFT_ASSERT(
             getOperationPrepareTable().find(opTuple) != getOperationPrepareTable().end(),
@@ -553,7 +558,16 @@ std::vector<bool> Model::supportedOperations() {
     std::vector<bool> supported(mOperations.size());
     for (size_t i = 0; i < supported.size(); ++i) {
         const Operation& operation = mOperations[i];
-        auto entry = getOperationCheckTable().find(operation.type);
+        OperationType operationType = operation.type;
+
+        // For now, the operation type is always the same as its first operand
+        // parameter. If this changes in the future, this line of code will need
+        // to be updated.
+        OperandType operandType = mOperands[operation.inputs[0]].type;
+
+        OperationTuple opTuple = std::make_pair(operationType, operandType);
+
+        auto entry = getOperationCheckTable().find(opTuple);
         if (entry != getOperationCheckTable().end()) {
             supported[i] = entry->second(operation.inputs, operation.outputs, this);
         } else {

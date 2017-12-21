@@ -36,19 +36,14 @@ using HexagonModel = ::android::hardware::neuralnetworks::V1_0::implementation::
 using ::android::hardware::neuralnetworks::V1_0::Operand;
 
 using OperationTuple = std::pair<OperationType, OperandType>;
-using HexagonPrepareFn =
+
+using HexagonOperationFn =
     std::function<bool(const std::vector<uint32_t>& /* ins */,
                        const std::vector<uint32_t>& /* outs */, HexagonModel* /* model */)>;
-using OperationPrepareTable = std::map<OperationTuple, HexagonPrepareFn>;
 
-OperationPrepareTable& getOperationPrepareTable();
-
-using HexagonCheckFn =
-    std::function<bool(const std::vector<uint32_t>& /* ins */,
-                       const std::vector<uint32_t>& /* outs */, HexagonModel* /* model */)>;
-using OperationCheckTable = std::map<OperationType, HexagonCheckFn>;
-
-OperationCheckTable& getOperationCheckTable();
+using OperationTable = std::map<OperationTuple, HexagonOperationFn>;
+OperationTable& getOperationPrepareTable();
+OperationTable& getOperationCheckTable();
 
 }  // namespace hexagon
 }  // namespace implementation
