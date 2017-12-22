@@ -191,7 +191,7 @@ hexagon_nn_padding_type Model::getPadding(uint32_t operand) {
     return hexagon::getPadding(padding);
 }
 
-hexagon_nn_input Model::createQuantizationValue(uint32_t operand, uint32_t quant_value) {
+hexagon_nn_input Model::createQuantizationValue(uint32_t operand, int32_t quant_value) {
     OperandInfo& operandInfo = mOperands[operand];
     float real_value = (quant_value - operandInfo.zeroPoint) * operandInfo.scale;
     return createValues<float>({real_value});
@@ -526,12 +526,30 @@ bool Model::addOperations() {
 
 bool Model::addOutputs() {
     // prepare OP_OUTPUT's inputs
-    std::vector<hexagon_nn_input> ins(mOutputs.size());
-    for (size_t i = 0; i < mOutputs.size(); ++i) {
-        OperandInfo& operand = mOperands[mOutputs[i]];
+    std::vector<hexagon_nn_input> ins;
+    for (size_t out : mOutputs) {
+        OperandInfo& operand = mOperands[out];
         HEXAGON_SOFT_ASSERT_NE(operand.hexagon_input, hexagon_nn_input{},
                                "output operand has not been registered");
-        ins[i] = operand.hexagon_input;
+
+        if (operand.type == OperandType::TENSOR_QUANT8_ASYMM) {
+            // Adjust quantized range of outputs
+            uint32_t dequant = addOperationInternal(
+                OP_Dequantize, NN_PAD_NA,
+                {operand.hexagon_input, operand.hexagon_input_min, operand.hexagon_input_max},
+                {make_hexagon_nn_output(operand.dimensions, sizeof(float))});
+            uint32_t quant =
+                addOperationInternal(OP_Quantize, NN_PAD_NA,
+                                     {{.src_id = dequant, .output_idx = 0},
+                                      createQuantizationValue(out, 0),
+                                      createQuantizationValue(out, 255)},
+                                     {make_hexagon_nn_output(operand.dimensions, sizeof(uint8_t)),
+                                      make_hexagon_nn_output({1, 1, 1, 1}, sizeof(float)),
+                                      make_hexagon_nn_output({1, 1, 1, 1}, sizeof(float))});
+            ins.push_back({.src_id = quant, .output_idx = 0});
+        } else {
+            ins.push_back(operand.hexagon_input);
+        }
     }
 
     // add single output node for entire graph

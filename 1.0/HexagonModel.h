@@ -90,7 +90,7 @@ class Model {
     const hexagon_nn_input& getTensor(uint32_t operand);
     const hexagon_nn_input& getQuantizationMin(uint32_t operand);
     const hexagon_nn_input& getQuantizationMax(uint32_t operand);
-    hexagon_nn_input createQuantizationValue(uint32_t operand, uint32_t quant_value);
+    hexagon_nn_input createQuantizationValue(uint32_t operand, int32_t quant_value);
     hexagon_nn_input createConvFilterTensor(uint32_t operand);
     hexagon_nn_input createDepthwiseFilterTensor(uint32_t operand, int32_t depth_multiplier);
     hexagon_nn_input createFullyConnectedWeightTensor(uint32_t operand);
