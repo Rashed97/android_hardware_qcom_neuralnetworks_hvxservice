@@ -16,14 +16,14 @@
 
 #define LOG_TAG "android.hardware.neuralnetworks@1.0-service-hvx"
 
-#include "Device.h"
-#include <android/hardware/neuralnetworks/1.0/IDevice.h>
 #include <android-base/logging.h>
+#include <android/hardware/neuralnetworks/1.0/IDevice.h>
 #include <hidl/HidlTransportSupport.h>
+#include "Device.h"
 
 // Generated HIDL files
-using android::hardware::neuralnetworks::V1_0::implementation::Device;
 using android::hardware::neuralnetworks::V1_0::IDevice;
+using android::hardware::neuralnetworks::V1_0::implementation::Device;
 
 int main() {
     android::sp<IDevice> device = new Device();

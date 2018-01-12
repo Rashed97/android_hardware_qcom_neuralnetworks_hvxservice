@@ -17,13 +17,14 @@
 #define LOG_TAG "android.hardware.neuralnetworks@1.0-impl-hvx"
 
 #include "Device.h"
+#include <android-base/logging.h>
+#include <memory>
+#include <mutex>
+#include <thread>
 #include "HexagonModel.h"
 #include "HexagonUtils.h"
 #include "PreparedModel.h"
-#include <android-base/logging.h>
-#include <mutex>
-#include <thread>
-#include <memory>
+#include "ValidateHal.h"
 
 namespace android {
 namespace hardware {
@@ -37,29 +38,31 @@ Device::~Device() {}
 
 static std::once_flag configure_nnlib;
 static void configureHexagon() {
-    std::call_once(configure_nnlib, [](){ hexagon::Controller::getInstance().config(); });
+    std::call_once(configure_nnlib, []() {
+        hexagon::Controller::getInstance().config();
+        hexagon::Controller::getInstance().boost(100);
+    });
 }
 
 Return<void> Device::getCapabilities(getCapabilities_cb _hidl_cb) {
     configureHexagon();
 
+    // These numbers are approximations for this release.
+    // TODO Change with the actual number.
     PerformanceInfo float32Performance = {
-        .execTime   = 100.0f, // nanoseconds?
-        .powerUsage = 1.0f,   // picoJoules
+        .execTime = 30.0f, .powerUsage = 2.0f,
     };
 
     PerformanceInfo quantized8Performance = {
-        .execTime   = 100.0f, // nanoseconds?
-        .powerUsage = 1.0f,   // picoJoules
+        .execTime = 0.7f, .powerUsage = 0.7f,
     };
 
     Capabilities capabilities = {
-        .float32Performance    = float32Performance,
-        .quantized8Performance = quantized8Performance,
+        .float32Performance = float32Performance, .quantized8Performance = quantized8Performance,
     };
 
     ErrorStatus status =
-            hexagon::isHexagonAvailable() ? ErrorStatus::NONE : ErrorStatus::DEVICE_UNAVAILABLE;
+        hexagon::isHexagonAvailable() ? ErrorStatus::NONE : ErrorStatus::DEVICE_UNAVAILABLE;
 
     _hidl_cb(status, capabilities);
     return Void();
@@ -85,14 +88,17 @@ Return<void> Device::getSupportedOperations(const Model& model,
     return Void();
 }
 
-void Device::asyncPrepare(const Model& model, const sp<IPreparedModelCallback>& callback) {
+static void asyncPrepare(const Model& model, const sp<IPreparedModelCallback>& callback) {
     std::shared_ptr<hexagon::Model> hexagonModel = std::make_shared<hexagon::Model>(model);
 
-    if (hexagonModel->compile()) {
-        callback->notify(ErrorStatus::NONE, new PreparedModel(model, hexagonModel));
+    Return<void> ret;
+    if (hexagonModel->prepare()) {
+        ret = callback->notify(ErrorStatus::NONE, new PreparedModel(model, hexagonModel));
+    } else {
+        ret = callback->notify(ErrorStatus::GENERAL_FAILURE, nullptr);
     }
-    else {
-        callback->notify(ErrorStatus::GENERAL_FAILURE, nullptr);
+    if (!ret.isOk()) {
+        LOG(ERROR) << "Error in callback's return type: " << ret.description();
     }
 }
 
@@ -113,9 +119,9 @@ Return<ErrorStatus> Device::prepareModel(const Model& model,
         return ErrorStatus::DEVICE_UNAVAILABLE;
     }
 
-    // This thread is intentionally detached because the sample driver service
-    // is expected to live forever.
-    std::thread([this, model, callback]{ asyncPrepare(model, callback); }).detach();
+    // TODO: once nnlib hanging issue is resolved, make this function
+    // asynchronous again
+    asyncPrepare(model, callback);
 
     return ErrorStatus::NONE;
 }
@@ -123,7 +129,7 @@ Return<ErrorStatus> Device::prepareModel(const Model& model,
 Return<DeviceStatus> Device::getStatus() {
     configureHexagon();
     mCurrentStatus =
-            hexagon::isHexagonAvailable() ? DeviceStatus::AVAILABLE : DeviceStatus::OFFLINE;
+        hexagon::isHexagonAvailable() ? DeviceStatus::AVAILABLE : DeviceStatus::OFFLINE;
     return mCurrentStatus;
 }
 
