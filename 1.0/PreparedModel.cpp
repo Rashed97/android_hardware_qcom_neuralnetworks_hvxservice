@@ -16,10 +16,11 @@
 
 #define LOG_TAG "android.hardware.neuralnetworks@1.0-impl-hvx"
 
-#include "HexagonUtils.h"
 #include "PreparedModel.h"
 #include <android-base/logging.h>
 #include <thread>
+#include "HexagonUtils.h"
+#include "ValidateHal.h"
 
 namespace android {
 namespace hardware {
@@ -28,16 +29,19 @@ namespace V1_0 {
 namespace implementation {
 
 PreparedModel::PreparedModel(const Model& neuralNetworksModel,
-                             const std::shared_ptr<hexagon::Model>& hexagonModel) :
-        mNeuralNetworksModel(neuralNetworksModel), mHexagonModel(hexagonModel) {}
+                             const std::shared_ptr<hexagon::Model>& hexagonModel)
+    : mNeuralNetworksModel(neuralNetworksModel), mHexagonModel(hexagonModel) {}
 
 PreparedModel::~PreparedModel() {}
 
 static void asyncExecute(const std::shared_ptr<hexagon::Model>& model, const Request& request,
                          const sp<IExecutionCallback>& callback) {
-    ErrorStatus status = model->execute(request) == true ?
-            ErrorStatus::NONE : ErrorStatus::GENERAL_FAILURE;
-    callback->notify(status);
+    ErrorStatus status =
+        model->execute(request) == true ? ErrorStatus::NONE : ErrorStatus::GENERAL_FAILURE;
+    Return<void> ret = callback->notify(status);
+    if (!ret.isOk()) {
+        LOG(ERROR) << "Error in callback's return type: " << ret.description();
+    }
 }
 
 Return<ErrorStatus> PreparedModel::execute(const Request& request,
@@ -46,18 +50,25 @@ Return<ErrorStatus> PreparedModel::execute(const Request& request,
         LOG(ERROR) << "invalid callback passed to execute";
         return ErrorStatus::INVALID_ARGUMENT;
     }
+
     if (!nn::validateRequest(request, mNeuralNetworksModel)) {
-        callback->notify(ErrorStatus::INVALID_ARGUMENT);
+        Return<void> ret = callback->notify(ErrorStatus::INVALID_ARGUMENT);
+        if (!ret.isOk()) {
+            LOG(ERROR) << "Error in callback's return type: " << ret.description();
+        }
         return ErrorStatus::INVALID_ARGUMENT;
     }
     if (!hexagon::isHexagonAvailable()) {
-        callback->notify(ErrorStatus::DEVICE_UNAVAILABLE);
+        Return<void> ret = callback->notify(ErrorStatus::DEVICE_UNAVAILABLE);
+        if (!ret.isOk()) {
+            LOG(ERROR) << "Error in callback's return type: " << ret.description();
+        }
         return ErrorStatus::DEVICE_UNAVAILABLE;
     }
 
-    // This thread is intentionally detached because the sample driver service
-    // is expected to live forever.
-    std::thread(asyncExecute, mHexagonModel, request, callback).detach();
+    // TODO: once nnlib hanging issue is resolved, make this function
+    // asynchronous again
+    asyncExecute(mHexagonModel, request, callback);
 
     return ErrorStatus::NONE;
 }
