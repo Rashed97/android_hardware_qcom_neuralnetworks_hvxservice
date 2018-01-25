@@ -405,10 +405,12 @@ bool Model::addFusedFloatOperation(op_type op, hexagon_nn_padding_type pad,
         HEXAGON_SOFT_ASSERT_NE(0, node, "Error adding bias operation");
     }
 
-    std::vector<hexagon_nn_input> buffer2_in = {{.src_id = node, .output_idx = 0}};
-    buffer2_in.insert(buffer2_in.end(), actArgs.begin(), actArgs.end());
-    node = addOperationInternal(activation, NN_PAD_NA, buffer2_in, outs);
-    HEXAGON_SOFT_ASSERT_NE(0, node, "Error adding activation operation");
+    if (activation != OP_Nop) {
+        std::vector<hexagon_nn_input> buffer2_in = {{.src_id = node, .output_idx = 0}};
+        buffer2_in.insert(buffer2_in.end(), actArgs.begin(), actArgs.end());
+        node = addOperationInternal(activation, NN_PAD_NA, buffer2_in, outs);
+        HEXAGON_SOFT_ASSERT_NE(0, node, "Error adding activation operation");
+    }
 
     return registerHexagonInputs(outputs, node);
 }
@@ -459,10 +461,12 @@ bool Model::addFusedQuant8Operation(op_type op, hexagon_nn_padding_type pad,
     previous_max.src_id = node;
 
     // activation
-    std::vector<hexagon_nn_input> buffer = {previous, previous_min, previous_max};
-    buffer.insert(buffer.end(), actArgs.begin(), actArgs.end());
-    node = addOperationInternal(activation, NN_PAD_NA, buffer, out8);
-    HEXAGON_SOFT_ASSERT_NE(0, node, "Error adding activation operation");
+    if (activation != OP_Nop) {
+        std::vector<hexagon_nn_input> buffer = {previous, previous_min, previous_max};
+        buffer.insert(buffer.end(), actArgs.begin(), actArgs.end());
+        node = addOperationInternal(activation, NN_PAD_NA, buffer, out8);
+        HEXAGON_SOFT_ASSERT_NE(0, node, "Error adding activation operation");
+    }
 
     return registerHexagonInputs(outputs, node);
 }
