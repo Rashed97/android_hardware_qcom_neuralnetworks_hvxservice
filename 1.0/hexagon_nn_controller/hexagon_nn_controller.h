@@ -140,6 +140,8 @@ typedef int (*hexagon_nn_controller_set_powersave_level_fn)(unsigned int level);
 
 typedef int (*hexagon_nn_controller_config_fn)();
 
+typedef unsigned int (*hexagon_nn_controller_get_dsp_offset_fn)();
+
 typedef int (*hexagon_nn_controller_boost_fn)(int bus_usage);
 
 typedef int (*hexagon_nn_controller_slow_fn)();

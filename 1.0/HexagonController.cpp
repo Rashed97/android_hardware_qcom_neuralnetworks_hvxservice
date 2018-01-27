@@ -45,6 +45,7 @@
     MACRO(disable_dcvs)            \
     MACRO(set_powersave_level)     \
     MACRO(config)                  \
+    MACRO(get_dsp_offset)          \
     MACRO(boost)                   \
     MACRO(slow)
 
@@ -199,6 +200,10 @@ int Controller::set_powersave_level(unsigned int level) {
 
 int Controller::config() {
     CONTROLLER_CHECK(config);
+}
+
+unsigned int Controller::get_dsp_offset() {
+    CONTROLLER_CHECK(get_dsp_offset);
 }
 
 int Controller::boost(int bus_usage) {

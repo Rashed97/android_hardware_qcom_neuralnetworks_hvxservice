@@ -108,6 +108,8 @@ class Controller {
 
     int config();
 
+    unsigned int get_dsp_offset();
+
     int boost(int bus_usage);
 
     int slow();
@@ -137,6 +139,7 @@ class Controller {
     hexagon_nn_controller_disable_dcvs_fn mFn_disable_dcvs;
     hexagon_nn_controller_set_powersave_level_fn mFn_set_powersave_level;
     hexagon_nn_controller_config_fn mFn_config;
+    hexagon_nn_controller_get_dsp_offset_fn mFn_get_dsp_offset;
     hexagon_nn_controller_boost_fn mFn_boost;
     hexagon_nn_controller_slow_fn mFn_slow;
 };
