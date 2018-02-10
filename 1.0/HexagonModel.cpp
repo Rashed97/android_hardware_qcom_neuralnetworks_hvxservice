@@ -653,7 +653,7 @@ static OperandInfo getUpdatedOperand(const RequestArgument& inputOutput,
         newInfo.dimensions = inputOutput.dimensions;
     }
 
-    newInfo.buffer = pool.getBuffer() + offset;
+    newInfo.buffer = pool.buffer + offset;
     newInfo.length = getSize(newInfo);
 
     return newInfo;
