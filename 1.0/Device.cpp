@@ -24,7 +24,6 @@
 #include "HexagonModel.h"
 #include "HexagonUtils.h"
 #include "PreparedModel.h"
-#include "ValidateHal.h"
 
 namespace android {
 namespace hardware {

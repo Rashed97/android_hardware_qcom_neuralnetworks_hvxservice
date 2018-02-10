@@ -20,7 +20,6 @@
 #include <android-base/logging.h>
 #include <thread>
 #include "HexagonUtils.h"
-#include "ValidateHal.h"
 
 namespace android {
 namespace hardware {
